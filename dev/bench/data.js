@@ -1,6 +1,6 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743504565541,
-  "repoUrl": "https://github.com/alibaba/loongcollector",
+  "lastUpdate": 1743574363970,
+  "repoUrl": "https://github.com/Takuka0311/LoongCollector",
   "entries": {
     "benchmark": [
       {
@@ -1679,6 +1679,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtail",
             "value": 42.61950775375944,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yangzehua.yzh@alibaba-inc.com",
+            "name": "玄飏",
+            "username": "Takuka0311"
+          },
+          "committer": {
+            "email": "yangzehua.yzh@alibaba-inc.com",
+            "name": "玄飏",
+            "username": "Takuka0311"
+          },
+          "distinct": true,
+          "id": "2287898af674ea539b995cbdeef6b0bafd96910c",
+          "message": "init benchmark",
+          "timestamp": "2025-04-02T13:37:42+08:00",
+          "tree_id": "b23cdb89291209200d0a71e961d8e888ee51f911",
+          "url": "https://github.com/Takuka0311/LoongCollector/commit/2287898af674ea539b995cbdeef6b0bafd96910c"
+        },
+        "date": 1743574363451,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_ilogtail",
+            "value": 41.410512442167075,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_ilogtail",
+            "value": 37.23125365707962,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_ilogtail",
+            "value": 49.796875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtail",
+            "value": 45.3116586538462,
             "unit": "MB"
           }
         ]
