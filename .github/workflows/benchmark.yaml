@@ -112,7 +112,6 @@ jobs:
         run: git push 'https://Takuka0311:${{ secrets.GITHUB_TOKEN }}@github.com/Takuka0311/LoongCollector.git' gh-pages:gh-pages
 
   result:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: [ CI ]
