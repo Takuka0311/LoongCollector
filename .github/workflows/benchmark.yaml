@@ -109,7 +109,7 @@ jobs:
           git -c user.name=github-action-benchmark -c user.email=github@users.noreply.github.com commit --amend -m "$last_commit_message"
       
       - name: Push benchmark result
-        run: git push 'https://alibaba:${{ secrets.GITHUB_TOKEN }}@github.com/alibaba/ilogtail.git' gh-pages:gh-pages
+        run: git push 'https://Takuka0311:${{ secrets.GITHUB_TOKEN }}@github.com/Takuka0311/LoongCollector.git' gh-pages:gh-pages
 
   result:
     if: github.event.pull_request.merged == true
