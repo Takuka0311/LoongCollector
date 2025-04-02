@@ -17,7 +17,7 @@ name: Benchmark
 on:
   pull_request:
     branches:
-      - main
+      - benchmark
     paths-ignore:
       - 'docs/**'
       - 'example_config/**'
@@ -26,12 +26,9 @@ on:
       - 'changes/**'
       - 'licenses/**'
       - 'CHANGELOG.md'
-    types:
-      - closed
 
 jobs:
   CI:
-    if: github.event.pull_request.merged == true
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
