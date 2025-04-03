@@ -1,0 +1,134 @@
+# Copyright 2021 iLogtail Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Benchmark-Concurrency
+
+on:
+  push:
+    branches:
+      - benchmark
+    paths-ignore:
+      - 'docs/**'
+      - 'example_config/**'
+      - 'docker/**'
+      - 'k8s_template/**'
+      - 'changes/**'
+      - 'licenses/**'
+      - 'CHANGELOG.md'
+
+jobs:
+  CI:
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        test-agent: ["ilogtailC", "ilogtailCGo", "ilogtailSPL", "filebeat", "ilogtailC", "vector", "fluentbit"] # 定义测试组
+        go-version: [ 1.19.10 ]
+        python-version: [ 3.8 ]
+        runner: [ ubuntu-latest ]
+      fail-fast: true
+    permissions:
+      contents: write
+    steps:
+      # Clean up space to prevent action from running out of disk space.
+      - name: clean
+        if: matrix.runner == 'ubuntu-latest'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+
+      - name: Check disk space
+        run: |
+          df -hT $PWD
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Update Docker-compose to v2
+        run: |
+          sudo curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: System environment
+        run: |
+          uname -r
+          docker --version
+          go version
+
+      - name: Run benchmark for agent ${{ matrix.test-agent }}
+        env:
+          BUILD_LOGTAIL_UT: OFF
+          WITHOUTGDB: ON
+        run: |
+          pip3 install -r test/requirements.txt
+          ./scripts/e2e.sh benchmark performance "${{ matrix.test-agent }}"
+          git stash
+      
+      - name: Upload benchmark result
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results-${{ matrix.test-agent }}
+          path: test/benchmark/report/ilogtail_statistic_all.json
+
+  result:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [ CI ]
+    steps:
+      - name: Download benchmark results
+        uses: actions/download-artifact@v3
+        with:
+          path: downloaded-results
+
+      - name: Merge benchmark results
+        run: |
+          mkdir -p merged-results
+          find downloaded-results -name "ilogtail_statistic_all.json" -exec cat {} \; > merged-results/merged_results.json
+
+      - name: Store benchmark result iLogtail
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: benchmark
+          tool: "customSmallerIsBetter"
+          output-file-path: "merged-results/merged_results.json"
+          auto-push: false
+          summary-always: true
+
+      - name: Store benchmark result other agents
+        run: |
+          git checkout gh-pages
+          mv test/benchmark/report/records_all.json dev/bench/records_all.js
+          sed -i '1s/^\[/window.BENCHMARK_RECORDS = [/' dev/bench/records_all.js
+          git add dev/bench/records_all.js
+          last_commit_message=$(git log -1 --pretty=%B)
+          git -c user.name=github-action-benchmark -c user.email=github@users.noreply.github.com commit --amend -m "$last_commit_message"
+
+      - name: Push benchmark result
+        run: git push 'https://Takuka0311:${{ secrets.GITHUB_TOKEN }}@github.com/Takuka0311/LoongCollector.git' gh-pages:gh-pages

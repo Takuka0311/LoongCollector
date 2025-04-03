@@ -2,7 +2,7 @@
 Feature: performance file to blackhole fluentbit
   Performance file to blackhole fluentbit
 
-  @e2e-performance @docker-compose
+  @e2e-performance @docker-compose @fluentbit
   Scenario: PerformanceFileToBlackholeFluentbit
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

@@ -2,7 +2,7 @@
 Feature: performance file to blackhole iLogtail-SPL
   Performance file to blackhole iLogtail-SPL
 
-  @e2e-performance @docker-compose
+  @e2e-performance @docker-compose @ilogtailSPL
   Scenario: PerformanceFileToBlackholeiLogtailSPL
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}
