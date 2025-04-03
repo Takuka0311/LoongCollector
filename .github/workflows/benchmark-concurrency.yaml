@@ -92,7 +92,7 @@ jobs:
           git stash
       
       - name: Upload benchmark result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ matrix.test-agent }}
           path: test/benchmark/report/ilogtail_statistic_all.json
