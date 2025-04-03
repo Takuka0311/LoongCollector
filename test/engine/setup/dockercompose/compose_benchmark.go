@@ -33,7 +33,7 @@ import (
 
 const (
 	benchmarkIdentifier = "benchmark"
-	cadvisorTemplate    = `version: '3.8'
+	cadvisorTemplate    = `
 services:
   cadvisor-%s:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
