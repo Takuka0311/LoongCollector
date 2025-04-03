@@ -212,7 +212,7 @@ unittest_pluginmanager: clean import_plugins
 
 # benchmark
 .PHONY: benchmark
-benchmark: clean e2edocker
+benchmark: clean
 	./scripts/e2e.sh benchmark performance
 	./scripts/benchmark_collect_result.sh
 
