@@ -89,6 +89,9 @@ jobs:
           pip3 install -r test/requirements.txt
           make benchmark
           git stash
+      
+      - name: Display structure of downloaded files
+        run: ls -R test/benchmark/report/
 
       - name: Store benchmark result iLogtail
         uses: benchmark-action/github-action-benchmark@v1
