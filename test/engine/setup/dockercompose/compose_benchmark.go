@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types"
 	dockertypes "github.com/docker/docker/api/types"
@@ -156,7 +157,7 @@ func (c *ComposeBenchmarkBooter) createComposeFile() error {
 			return err
 		}
 	}
-	cfg := c.getAdvisorConfig(config.CaseHome)
+	cfg := c.getAdvisorConfig(filepath.Base(filepath.Dir(config.CaseHome)))
 	services := cfg["services"].(map[string]interface{})
 	// merge docker compose file.
 	if len(bytes) > 0 {
