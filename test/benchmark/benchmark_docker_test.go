@@ -26,10 +26,11 @@ func TestE2EOnDockerComposePerformance(t *testing.T) {
 		Name:                "E2EOnDockerCompose",
 		ScenarioInitializer: engine.ScenarioInitializer,
 		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"test_cases"},
-			Tags:     "@e2e-performance && @docker-compose && ~@ebpf",
-			TestingT: t,
+			Format:      "pretty",
+			Paths:       []string{"test_cases"},
+			Tags:        "@e2e-performance && @docker-compose && ~@ebpf",
+			TestingT:    t,
+			Concurrency: 6,
 		},
 	}
 	if suite.Run() != 0 {

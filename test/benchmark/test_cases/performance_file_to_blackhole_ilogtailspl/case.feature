@@ -1,6 +1,6 @@
 @input
-Feature: performance file to blackhole iLogtail
-  Performance file to blackhole iLogtail
+Feature: performance file to blackhole iLogtail-SPL
+  Performance file to blackhole iLogtail-SPL
 
   @e2e-performance @docker-compose
   Scenario: PerformanceFileToBlackholeiLogtailSPL
