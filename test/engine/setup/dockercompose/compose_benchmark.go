@@ -108,7 +108,7 @@ func (c *ComposeBenchmarkBooter) Stop() error {
 	execError := testcontainers.NewLocalDockerCompose([]string{config.CaseHome + finalFileName}, benchmarkIdentifier).Down()
 	if execError.Error != nil {
 		logger.Error(context.Background(), "STOP_DOCKER_COMPOSE_ERROR",
-			"stdout", execError.Stdout.Error(), "stderr", execError.Stderr.Error())
+			"err", execError.Error.Error())
 		return execError.Error
 	}
 	_ = os.Remove(config.CaseHome + finalFileName)
