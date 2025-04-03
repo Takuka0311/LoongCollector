@@ -91,11 +91,11 @@ jobs:
           ./scripts/e2e.sh benchmark performance "${{ matrix.test-agent }}"
           git stash
       
-      - name: Upload benchmark result
+      - name: Upload benchmark result for agent ${{ matrix.test-agent }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ matrix.test-agent }}
-          path: test/benchmark/report/ilogtail_statistic_all.json
+          path: test/benchmark/report
 
   result:
     runs-on: ubuntu-latest
@@ -105,19 +105,14 @@ jobs:
       - name: Download benchmark results
         uses: actions/download-artifact@v4
         with:
-          path: downloaded-results
-
-      - name: Merge benchmark results
-        run: |
-          mkdir -p merged-results
-          find downloaded-results -name "ilogtail_statistic_all.json" -exec cat {} \; > merged-results/merged_results.json
+          path: test/benchmark/report/
 
       - name: Store benchmark result iLogtail
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: benchmark
           tool: "customSmallerIsBetter"
-          output-file-path: "merged-results/merged_results.json"
+          output-file-path: "test/benchmark/report/ilogtail_statistic_all.json"
           auto-push: false
           summary-always: true
 
