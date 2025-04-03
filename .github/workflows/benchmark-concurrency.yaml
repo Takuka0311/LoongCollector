@@ -37,7 +37,7 @@ jobs:
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
-      fail-fast: true
+      fail-fast: false
     permissions:
       contents: write
     steps:
