@@ -25,8 +25,4 @@ processors:
     FilterRegex:
       - ^no-agent$
 flushers:
-  - Type: flusher_sls
-    Region: cn-hangzhou
-    Endpoint: cn-hangzhou.log.aliyuncs.com
-    Project: test_project
-    Logstore: test_logstore
+  - Type: flusher_blackhole
