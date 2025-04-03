@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1743574363970,
+  "lastUpdate": 1743687574452,
   "repoUrl": "https://github.com/Takuka0311/LoongCollector",
   "entries": {
     "benchmark": [
@@ -1723,6 +1723,90 @@ window.BENCHMARK_DATA = {
           {
             "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtail",
             "value": 45.3116586538462,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "committer": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "distinct": true,
+          "id": "41391fd9459375aaba644bd6ff6e22d57dfdf57e",
+          "message": "fix Benchmark-Concurrency",
+          "timestamp": "2025-04-03T21:30:58+08:00",
+          "tree_id": "222d7dd868624b0401de71c959c4fe480ed5d4dc",
+          "url": "https://github.com/Takuka0311/LoongCollector/commit/41391fd9459375aaba644bd6ff6e22d57dfdf57e"
+        },
+        "date": 1743687573826,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_ilogtailcgo",
+            "value": 180.78491461470074,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_ilogtailcgo",
+            "value": 166.00465584199242,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_ilogtailcgo",
+            "value": 74.6328125,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtailcgo",
+            "value": 69.5958751619171,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_ilogtail",
+            "value": 41.52007132164194,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_ilogtail",
+            "value": 38.03360110870902,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_ilogtail",
+            "value": 27.28515625,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtail",
+            "value": 22.214843749999996,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_ilogtailspl",
+            "value": 86.60073506286668,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_ilogtailspl",
+            "value": 68.81262100686196,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_ilogtailspl",
+            "value": 23.43359375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_ilogtailspl",
+            "value": 21.844823473282446,
             "unit": "MB"
           }
         ]
