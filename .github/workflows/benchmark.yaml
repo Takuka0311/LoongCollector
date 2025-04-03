@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Benchmark
+name: Benchmark-Concurrency
 
 on:
   push:
@@ -28,15 +28,16 @@ on:
       - 'CHANGELOG.md'
 
 jobs:
-  CI:
+  Benchmark:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       matrix:
+        test-agent: ["ilogtailC", "ilogtailCGo", "ilogtailSPL", "filebeat", "vector", "fluentbit"]
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
-      fail-fast: true
+      fail-fast: false
     permissions:
       contents: write
     steps:
@@ -81,17 +82,42 @@ jobs:
           docker --version
           go version
 
-      - name: Run benchmark
+      - name: Run benchmark for agent ${{ matrix.test-agent }}
         env:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
         run: |
           pip3 install -r test/requirements.txt
-          make benchmark
+          ./scripts/e2e.sh benchmark performance "${{ matrix.test-agent }}"
           git stash
       
-      - name: Display structure of downloaded files
-        run: ls -R test/benchmark/report/
+      - name: Upload benchmark result for agent ${{ matrix.test-agent }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.test-agent }}
+          path: test/benchmark/report
+
+  result:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [ Benchmark ]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Download benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          path: test/benchmark/report/
+          merge-multiple: true
+
+      - name: Display structure of downloaded files and merge
+        run: |
+          ls -R test/benchmark/report/
+          ./scripts/benchmark_collect_result.sh
+          ls -R test/benchmark/report/
 
       - name: Store benchmark result iLogtail
         uses: benchmark-action/github-action-benchmark@v1
@@ -101,7 +127,7 @@ jobs:
           output-file-path: "test/benchmark/report/ilogtail_statistic_all.json"
           auto-push: false
           summary-always: true
-      
+
       - name: Store benchmark result other agents
         run: |
           git checkout gh-pages
@@ -110,14 +136,6 @@ jobs:
           git add dev/bench/records_all.js
           last_commit_message=$(git log -1 --pretty=%B)
           git -c user.name=github-action-benchmark -c user.email=github@users.noreply.github.com commit --amend -m "$last_commit_message"
-      
+
       - name: Push benchmark result
         run: git push 'https://Takuka0311:${{ secrets.GITHUB_TOKEN }}@github.com/Takuka0311/LoongCollector.git' gh-pages:gh-pages
-
-  result:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: [ CI ]
-    steps:
-      - name: Build Result
-        run: echo "Just to make the GitHub merge button green"
