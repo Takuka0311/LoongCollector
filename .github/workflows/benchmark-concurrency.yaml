@@ -102,14 +102,22 @@ jobs:
     timeout-minutes: 60
     needs: [ Benchmark ]
     steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
       - name: Download benchmark results
         uses: actions/download-artifact@v4
         with:
           path: test/benchmark/report/
           merge-multiple: true
 
-      - name: Display structure of downloaded files
-        run: ls -R test/benchmark/report/
+      - name: Display structure of downloaded files and merge
+        run: |
+          ls -R test/benchmark/report/
+          ./scripts/benchmark_collect_result.sh
+          ls -R test/benchmark/report/
 
       - name: Store benchmark result iLogtail
         uses: benchmark-action/github-action-benchmark@v1
