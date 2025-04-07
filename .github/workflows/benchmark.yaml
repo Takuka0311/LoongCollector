@@ -93,11 +93,12 @@ jobs:
       matrix:
         test-agent: 
           - "LoongCollector"
-          - "LoongCollectorCGo"
+          # - "LoongCollectorCGo"
           - "LoongCollectorSPL"
           - "filebeat"
           - "vector"
-          - "fluentbit"
+          - "fluentbit-3.2.10"
+          - "fluentbit-4.0.0"
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
