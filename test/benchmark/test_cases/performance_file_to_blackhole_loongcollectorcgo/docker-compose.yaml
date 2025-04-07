@@ -16,11 +16,11 @@ version: '3.8'
 
 services:
   LoongCollectorCGo:
-    image: sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5
+    image: aliyun/loongcollector:0.0.1
     volumes:
-      - ./loongcollector.yaml:/usr/local/loongcollector/conf/continuous_pipeline_config/local/loongcollector.yaml
+      - ./loongcollector.yaml:/loongcollector/conf/continuous_pipeline_config/local/loongcollector.yaml
       - .:/home/loongcollector
     healthcheck:
-      test: "cat /usr/local/loongcollector/log/loongcollector.LOG"
+      test: "cat /loongcollector/log/loongcollector.LOG"
       interval: 15s
       timeout: 5s
