@@ -13,6 +13,7 @@ import (
 	"github.com/google/cadvisor/client"
 	v1 "github.com/google/cadvisor/info/v1"
 
+	"github.com/alibaba/ilogtail/pkg/logger"
 	"github.com/alibaba/ilogtail/test/config"
 )
 
@@ -62,7 +63,7 @@ func (m *Monitor) Start(ctx context.Context, containerName string) (context.Cont
 	// 获取所有容器信息
 	allContainers, err := client.AllDockerContainers(&v1.ContainerInfoRequest{NumStats: 10})
 	if err != nil {
-		fmt.Println("Error getting all containers info:", err)
+		logger.Error(ctx, "MONITOR_START_ALARM", "Error getting all containers info:", err)
 		return ctx, err
 	}
 	for _, container := range allContainers {
@@ -71,7 +72,7 @@ func (m *Monitor) Start(ctx context.Context, containerName string) (context.Cont
 			m.isMonitoring.Store(true)
 			m.statistic = NewMonitorStatistic(config.CaseName)
 			m.stopCh = make(chan int)
-			fmt.Println("Start monitoring container:", containerFullName)
+			logger.Info(ctx, "Start monitoring container:", containerFullName)
 			go m.monitoring(client, containerFullName)
 			return ctx, nil
 		}
@@ -102,8 +103,8 @@ func (m *Monitor) monitoring(client *client.Client, containerName string) {
 			copy(cpuRawData, m.statistic.GetCPURawData())
 			sort.Float64s(cpuRawData)
 			lowThreshold = cpuRawData[len(cpuRawData)/2] * 0.3
-			fmt.Println("median of CPU usage rate(%):", cpuRawData[len(cpuRawData)/2])
-			fmt.Println("Low threshold of CPU usage rate(%):", lowThreshold)
+			logger.Info(context.Background(), "median of CPU usage rate(%):", cpuRawData[len(cpuRawData)/2])
+			logger.Info(context.Background(), "Low threshold of CPU usage rate(%):", lowThreshold)
 			if lowThreshold < 1 {
 				m.isMonitoring.Store(false)
 				m.stopCh <- exitCodeErrorNotProcessing
