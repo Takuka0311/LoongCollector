@@ -104,6 +104,16 @@ func (m *Monitor) monitoring(client *client.Client, containerName string, timeou
 	request := &v1.ContainerInfoRequest{NumStats: 10}
 	for {
 		select {
+		case <-timeoutTimer.C:
+			logger.Error(context.Background(), "MONITOR_TIMEOUT_ALARM", "Monitoring timeout after", timeout, "minutes")
+			bytes, _ := m.statistic.MarshalStatisticJSON()
+			_ = os.WriteFile(statisticFile, bytes, 0600)
+			bytes, _ = m.statistic.MarshalRecordsJSON()
+			_ = os.WriteFile(recordsFile, bytes, 0600)
+			m.isMonitoring.Store(false)
+			m.stopCh <- exitCodeErrorTimeout
+			m.statistic.ClearStatistic()
+			return
 		case <-timerCal.C:
 			// 计算CPU使用率的下阈值
 			cpuRawData := make([]float64, len(m.statistic.GetCPURawData()))

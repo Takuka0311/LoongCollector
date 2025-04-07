@@ -208,4 +208,4 @@ jobs:
           git -c user.name=github-action-benchmark -c user.email=github@users.noreply.github.com commit --amend -m "$last_commit_message"
 
       - name: Push benchmark result
-        run: git push 'https://Takuka0311:${{ secrets.GITHUB_TOKEN }}@github.com/Takuka0311/LoongCollector.git' gh-pages:gh-pages
+        run: git push 'https://${{ github.repository_owner }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository_owner }}/LoongCollector.git' gh-pages:gh-pages

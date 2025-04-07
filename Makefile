@@ -214,6 +214,7 @@ unittest_pluginmanager: clean import_plugins
 benchmark: dist
 	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
 
+
 .PHONY: all
 all: clean import_plugins
 	./scripts/gen_build_scripts.sh all "$(GENERATED_HOME)" "$(VERSION)" "$(BUILD_REPOSITORY)" "$(OUT_DIR)" "$(DOCKER_BUILD_EXPORT_GO_ENVS)" "$(DOCKER_BUILD_COPY_GIT_CONFIGS)" "$(PLUGINS_CONFIG_FILE)" "$(GO_MOD_FILE)"
