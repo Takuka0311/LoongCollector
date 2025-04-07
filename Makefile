@@ -153,6 +153,11 @@ e2edocker: clean import_plugins
 	./scripts/gen_build_scripts.sh e2e "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(OUT_DIR)" "$(DOCKER_BUILD_EXPORT_GO_ENVS)" "$(DOCKER_BUILD_COPY_GIT_CONFIGS)" "$(PLUGINS_CONFIG_FILE)" "$(GO_MOD_FILE)"
 	./scripts/docker_build.sh development "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" false "$(DOCKER_BUILD_USE_BUILDKIT)"
 
+.PHONY: benchmarkdocker
+benchmarkdocker: clean import_plugins
+	./scripts/gen_build_scripts.sh e2e "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(OUT_DIR)" "$(DOCKER_BUILD_EXPORT_GO_ENVS)" "$(DOCKER_BUILD_COPY_GIT_CONFIGS)" "$(PLUGINS_CONFIG_FILE)" "$(GO_MOD_FILE)"
+	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" false "$(DOCKER_BUILD_USE_BUILDKIT)"
+
 # provide a goc server for e2e testing
 .PHONY: gocdocker
 gocdocker: clean

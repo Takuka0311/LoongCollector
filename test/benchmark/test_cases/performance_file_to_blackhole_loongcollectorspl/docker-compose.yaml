@@ -21,6 +21,6 @@ services:
       - ./loongcollector.yaml:/loongcollector/conf/continuous_pipeline_config/local/loongcollector.yaml
       - .:/home/loongcollector
     healthcheck:
-      test: "cat /loongcollector/log/loongcollector.LOG"
+      test: "cat /usr/local/loongcollector/log/loongcollector.LOG"
       interval: 15s
       timeout: 5s

@@ -79,10 +79,9 @@ jobs:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
         run: |
-          # make clean
-          # make e2edocker
-          docker pull sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5
-          docker tag sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5 aliyun/loongcollector:0.0.1
+          make benchmarkdocker
+          # docker pull sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5
+          # docker tag sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5 aliyun/loongcollector:0.0.1
 
       - name: Tag and push Docker image to GitHub Packages
         run: |
