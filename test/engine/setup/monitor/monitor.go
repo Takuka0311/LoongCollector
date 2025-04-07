@@ -75,7 +75,6 @@ func (m *Monitor) Start(ctx context.Context, containerName string, timeout int) 
 			m.isMonitoring.Store(true)
 			m.statistic = NewMonitorStatistic(config.CaseName)
 			m.stopCh = make(chan int)
-			logger.Info(ctx, "Start monitoring container:", containerFullName)
 			go m.monitoring(client, containerFullName, timeout)
 			return ctx, nil
 		}
@@ -149,6 +148,10 @@ func (m *Monitor) monitoring(client *client.Client, containerName string, timeou
 			}
 		case <-timeoutTimer.C:
 			logger.Error(context.Background(), "MONITOR_TIMEOUT_ALARM", "Monitoring timeout after", timeout, "minutes")
+			bytes, _ := m.statistic.MarshalStatisticJSON()
+			_ = os.WriteFile(statisticFile, bytes, 0600)
+			bytes, _ = m.statistic.MarshalRecordsJSON()
+			_ = os.WriteFile(recordsFile, bytes, 0600)
 			m.isMonitoring.Store(false)
 			m.stopCh <- exitCodeErrorTimeout
 			m.statistic.ClearStatistic()
