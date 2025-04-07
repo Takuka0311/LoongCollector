@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744024442191,
+  "lastUpdate": 1744025985260,
   "repoUrl": "https://github.com/Takuka0311/LoongCollector",
   "entries": {
     "benchmark": [
@@ -2775,6 +2775,70 @@ window.BENCHMARK_DATA = {
           {
             "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollector",
             "value": 26.846277573529417,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "committer": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "distinct": true,
+          "id": "31d66a373653cb218a527f6e4562aee136d490b6",
+          "message": "add fluentbit 3.2.10, 4.0.0",
+          "timestamp": "2025-04-07T19:31:28+08:00",
+          "tree_id": "83f930d9e1937f83b3e72e3efa49717a98797e13",
+          "url": "https://github.com/Takuka0311/LoongCollector/commit/31d66a373653cb218a527f6e4562aee136d490b6"
+        },
+        "date": 1744025984577,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 15.136103982845711,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 12.591137652351083,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 29.60546875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 28.44986661585366,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 15.914972697051558,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 12.412150064165674,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 26.9296875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 25.457701439950977,
             "unit": "MB"
           }
         ]
