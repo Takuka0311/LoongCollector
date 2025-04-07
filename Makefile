@@ -155,7 +155,7 @@ e2edocker: clean import_plugins
 
 .PHONY: benchmarkdocker
 benchmarkdocker: dist
-	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" false "$(DOCKER_BUILD_USE_BUILDKIT)"
+	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
 
 # provide a goc server for e2e testing
 .PHONY: gocdocker
