@@ -79,24 +79,17 @@ jobs:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
         run: |
-          make clean
-          make e2edocker
+          # make clean
+          # make e2edocker
+          docker pull sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5
+          docker tag sls-opensource-registry.cn-shanghai.cr.aliyuncs.com/loongcollector-community-edition/loongcollector:3.0.5 aliyun/loongcollector:0.0.1
 
       - name: Tag and push Docker image to GitHub Packages
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-          docker tag aliyun/loongcollector:0.0.1 ghcr.io/${{ github.repository_owner }}/loongcollector:latest
-          docker push ghcr.io/${{ github.repository_owner }}/loongcollector:latest
-
-      # - name: Push Docker image
-      #   run: |
-      #     docker save aliyun/loongcollector:0.0.1 -o loongcollector.tar
-
-      # - name: Upload Docker image tar
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: loongcollector-image
-      #     path: loongcollector.tar
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin
+          docker tag aliyun/loongcollector:0.0.1 ghcr.io/$REPO_OWNER/loongcollector:daily
+          docker push ghcr.io/$REPO_OWNER/loongcollector:daily
 
   Benchmark:
     runs-on: ${{ matrix.runner }}
@@ -158,25 +151,14 @@ jobs:
           uname -r
           docker --version
           go version
-      
-      # - name: Download Docker image tar
-      #   if: contains(matrix.test-agent, 'LoongCollector')
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: loongcollector-image
-      #     path: .
-
-      # - name: Load Docker image from tar
-      #   if: contains(matrix.test-agent, 'LoongCollector')
-      #   run: |
-      #     docker load -i loongcollector.tar
 
       - name: Pull Docker image from GitHub Packages
         if: contains(matrix.test-agent, 'LoongCollector')
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-          docker pull ghcr.io/${{ github.repository_owner }}/loongcollector:latest
-          docker tag ghcr.io/${{ github.repository_owner }}/loongcollector:latest aliyun/loongcollector:0.0.1
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin
+          docker pull ghcr.io/$REPO_OWNER/loongcollector:daily
+          docker tag ghcr.io/$REPO_OWNER/loongcollector:daily aliyun/loongcollector:0.0.1
 
       - name: Run benchmark for agent ${{ matrix.test-agent }}
         run: |
