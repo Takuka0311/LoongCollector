@@ -19,10 +19,5 @@ processors:
       - bytes
       - referrer
       - user_agent
-  - Type: processor_filter_regex_native
-    FilterKey:
-      - user_agent
-    FilterRegex:
-      - ^no-agent$
 flushers:
   - Type: flusher_blackhole
