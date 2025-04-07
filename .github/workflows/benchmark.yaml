@@ -28,18 +28,89 @@ on:
       - 'CHANGELOG.md'
 
 jobs:
+  Build-LoongCollector:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        go-version: [ 1.19.10 ]
+        runner: [ ubuntu-latest ]
+      fail-fast: false
+    permissions:
+      contents: write
+    steps:
+      # Clean up space to prevent action from running out of disk space.
+      - name: clean
+        if: matrix.runner == 'ubuntu-latest'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+
+      - name: Check disk space
+        run: |
+          df -hT $PWD
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Update Docker-compose to v2
+        run: |
+          sudo curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: System environment
+        run: |
+          uname -r
+          docker --version
+          go version
+
+      - name: Run benchmark for agent ${{ matrix.test-agent }}
+        env:
+          BUILD_LOGTAIL_UT: OFF
+          WITHOUTGDB: ON
+        run: |
+          make clean
+          make e2edocker
+
+      - name: Save Docker image as tar
+        run: |
+          docker save alibaba/loongcollector:0.0.1 -o loongcollector.tar
+
+      - name: Upload Docker image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: loongcollector-image
+          path: loongcollector.tar
+
   Benchmark:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       matrix:
-        test-agent: ["ilogtailC", "ilogtailCGo", "ilogtailSPL", "filebeat", "vector", "fluentbit"]
+        test-agent: 
+          - "LoongCollectorC"
+          # - "LoongCollectorCGo"
+          - "LoongCollectorSPL"
+          - "filebeat"
+          - "vector"
+          - "fluentbit"
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
       fail-fast: false
     permissions:
       contents: write
+    needs: [ Build-LoongCollector ]
     steps:
       # Clean up space to prevent action from running out of disk space.
       - name: clean
@@ -81,11 +152,20 @@ jobs:
           uname -r
           docker --version
           go version
+      
+      - name: Download Docker image tar
+        if: contains(matrix.test-agent, 'LoongCollector')
+        uses: actions/download-artifact@v4
+        with:
+          name: loongcollector-image
+          path: .
+
+      - name: Load Docker image from tar
+        if: contains(matrix.test-agent, 'LoongCollector')
+        run: |
+          docker load -i loongcollector.tar
 
       - name: Run benchmark for agent ${{ matrix.test-agent }}
-        env:
-          BUILD_LOGTAIL_UT: OFF
-          WITHOUTGDB: ON
         run: |
           pip3 install -r test/requirements.txt
           ./scripts/e2e.sh benchmark performance "${{ matrix.test-agent }}"
@@ -119,12 +199,12 @@ jobs:
           ./scripts/benchmark_collect_result.sh
           ls -R test/benchmark/report/
 
-      - name: Store benchmark result iLogtail
+      - name: Store benchmark result LoongCollector
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: benchmark
           tool: "customSmallerIsBetter"
-          output-file-path: "test/benchmark/report/ilogtail_statistic_all.json"
+          output-file-path: "test/benchmark/report/loongcollector_statistic_all.json"
           auto-push: false
           summary-always: true
 

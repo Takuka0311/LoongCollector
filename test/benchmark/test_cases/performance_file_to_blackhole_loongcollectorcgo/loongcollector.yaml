@@ -2,7 +2,7 @@ enable: true
 inputs:
   - Type: input_file
     FilePaths: 
-      - /home/ilogtail/*.log
+      - /home/loongcollector/*.log
 processors:
   - Type: processor_regex
     SourceKey: content
