@@ -34,7 +34,6 @@ jobs:
       matrix:
         go-version: [ 1.19.10 ]
         runner: [ ubuntu-latest ]
-      fail-fast: false
     permissions:
       contents: write
       packages: write
@@ -90,7 +89,7 @@ jobs:
       matrix:
         test-agent: 
           - "LoongCollectorC"
-          # - "LoongCollectorCGo"
+          - "LoongCollectorCGo"
           - "LoongCollectorSPL"
           - "filebeat"
           - "vector"
