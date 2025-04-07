@@ -153,10 +153,6 @@ e2edocker: clean import_plugins
 	./scripts/gen_build_scripts.sh e2e "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(OUT_DIR)" "$(DOCKER_BUILD_EXPORT_GO_ENVS)" "$(DOCKER_BUILD_COPY_GIT_CONFIGS)" "$(PLUGINS_CONFIG_FILE)" "$(GO_MOD_FILE)"
 	./scripts/docker_build.sh development "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" false "$(DOCKER_BUILD_USE_BUILDKIT)"
 
-.PHONY: benchmarkdocker
-benchmarkdocker: dist
-	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
-
 # provide a goc server for e2e testing
 .PHONY: gocdocker
 gocdocker: clean
@@ -213,6 +209,10 @@ unittest_pluginmanager: clean import_plugins
 	mv ./plugins/input/prometheus/input_prometheus.go ./plugins/input/prometheus/input_prometheus.go.bak
 	go test $$(go list ./...|grep -Ev "telegraf|external|envconfig"| grep -E "plugin_main|pluginmanager") -coverprofile .coretestCoverage.txt
 	mv ./plugins/input/prometheus/input_prometheus.go.bak ./plugins/input/prometheus/input_prometheus.go
+
+.PHONY: benchmark
+benchmark: dist
+	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
 
 .PHONY: all
 all: clean import_plugins
