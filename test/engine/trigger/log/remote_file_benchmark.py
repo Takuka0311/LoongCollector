@@ -5,7 +5,7 @@ import math
 import random
 import time
 
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from faker import Faker
 from faker.providers import internet, user_agent, lorem, misc
@@ -48,7 +48,7 @@ def main():
 
     logger = logging.getLogger('log_generator')
     logger.setLevel(logging.INFO)
-    handler = TimedRotatingFileHandler(args.path, when="s", interval=600, backupCount=3)
+    handler = RotatingFileHandler(args.path, maxBytes=20*1024*1024, backupCount=10)
     formatter = logging.Formatter('%(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
