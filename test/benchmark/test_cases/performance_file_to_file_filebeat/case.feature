@@ -2,7 +2,7 @@
 Feature: performance file to file filebeat
   Performance file to file filebeat
 
-  @e2e-performance @docker-compose @filebeatfile
+  @e2e-performance @docker-compose @filebeat-file
   Scenario: PerformanceFileToFileFilebeat
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}
