@@ -18,11 +18,27 @@
 // TODO: the following dependencies should be removed
 #include "protobuf/sls/LogGroupSerializer.h"
 
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
 using namespace std;
 
 namespace logtail {
 
-const string JSON_KEY_TIME = "__time__";
+const char* JSON_KEY_TIME = "__time__";
+
+// Helper function to serialize common fields (tags and time)
+template <typename WriterType>
+void SerializeCommonFields(const SizedMap& tags, uint64_t timestamp, WriterType& writer) {
+    // Serialize tags
+    for (const auto& tag : tags.mInner) {
+        writer.Key(tag.first.to_string().c_str());
+        writer.String(tag.second.to_string().c_str());
+    }
+    // Serialize time
+    writer.Key(JSON_KEY_TIME);
+    writer.Uint64(timestamp);
+}
 
 bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, string& errorMsg) {
     if (group.mEvents.empty()) {
@@ -37,34 +53,37 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         return false;
     }
 
-    Json::Value groupTags;
-    for (const auto& tag : group.mTags.mInner) {
-        groupTags[tag.first.to_string()] = tag.second.to_string();
-    }
-
     // Use a single string buffer to avoid frequent memory allocations
     string buffer;
     buffer.reserve(group.mSizeBytes);
 
-    // Create a single StreamWriterBuilder outside the loop
-    Json::StreamWriterBuilder writer;
-    writer["indentation"] = "";
+    // Create reusable StringBuffer and Writer
+    rapidjson::StringBuffer jsonBuffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonBuffer);
+    auto resetBuffer = [&jsonBuffer]() {
+        jsonBuffer.Clear(); // Clear the buffer for reuse
+    };
+
+    // Temporary buffer to store serialized events
+    vector<string> tempBuffer;
+    tempBuffer.reserve(group.mEvents.size());
 
     // TODO: should support nano second
     switch (eventType) {
         case PipelineEvent::Type::LOG:
             for (const auto& item : group.mEvents) {
                 const auto& e = item.Cast<LogEvent>();
-                Json::Value eventJson;
-                // tags
-                eventJson.copy(groupTags);
-                // time
-                eventJson[JSON_KEY_TIME] = e.GetTimestamp();
+                resetBuffer();
+
+                writer.StartObject();
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // contents
                 for (const auto& kv : e) {
-                    eventJson[kv.first.to_string()] = kv.second.to_string();
+                    writer.Key(kv.first.to_string().c_str());
+                    writer.String(kv.second.to_string().c_str());
                 }
-                buffer += Json::writeString(writer, eventJson) + "\n";
+                writer.EndObject();
+                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
             }
             break;
         case PipelineEvent::Type::METRIC:
@@ -74,32 +93,37 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 if (e.Is<std::monostate>()) {
                     continue;
                 }
-                Json::Value eventJson;
-                // tags
-                eventJson.copy(groupTags);
-                // time
-                eventJson[JSON_KEY_TIME] = e.GetTimestamp();
+                resetBuffer();
+
+                writer.StartObject();
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // __labels__
-                eventJson[METRIC_RESERVED_KEY_LABELS] = Json::objectValue;
-                auto& labels = eventJson[METRIC_RESERVED_KEY_LABELS];
+                writer.Key(METRIC_RESERVED_KEY_LABELS.c_str());
+                writer.StartObject();
                 for (auto tag = e.TagsBegin(); tag != e.TagsEnd(); tag++) {
-                    labels[tag->first.to_string()] = tag->second.to_string();
+                    writer.Key(tag->first.to_string().c_str());
+                    writer.String(tag->second.to_string().c_str());
                 }
+                writer.EndObject();
                 // __name__
-                eventJson[METRIC_RESERVED_KEY_NAME] = e.GetName().to_string();
+                writer.Key(METRIC_RESERVED_KEY_NAME.c_str());
+                writer.String(e.GetName().to_string().c_str());
                 // __value__
+                writer.Key(METRIC_RESERVED_KEY_VALUE.c_str());
                 if (e.Is<UntypedSingleValue>()) {
-                    eventJson[METRIC_RESERVED_KEY_VALUE] = e.GetValue<UntypedSingleValue>()->mValue;
+                    writer.Double(e.GetValue<UntypedSingleValue>()->mValue);
                 } else if (e.Is<UntypedMultiDoubleValues>()) {
-                    eventJson[METRIC_RESERVED_KEY_VALUE] = Json::objectValue;
-                    auto& values = eventJson[METRIC_RESERVED_KEY_VALUE];
+                    writer.StartObject();
                     for (auto value = e.GetValue<UntypedMultiDoubleValues>()->ValuesBegin();
                          value != e.GetValue<UntypedMultiDoubleValues>()->ValuesEnd();
                          value++) {
-                        values[value->first.to_string()] = value->second.Value;
+                        writer.Key(value->first.to_string().c_str());
+                        writer.Double(value->second.Value);
                     }
+                    writer.EndObject();
                 }
-                buffer += Json::writeString(writer, eventJson) + "\n";
+                writer.EndObject();
+                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
             }
             break;
         case PipelineEvent::Type::SPAN:
@@ -111,18 +135,23 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         case PipelineEvent::Type::RAW:
             for (const auto& item : group.mEvents) {
                 const auto& e = item.Cast<RawEvent>();
-                Json::Value eventJson;
-                // tags
-                eventJson.copy(groupTags);
-                // time
-                eventJson[JSON_KEY_TIME] = e.GetTimestamp();
+                resetBuffer();
+
+                writer.StartObject();
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // content
-                eventJson[DEFAULT_CONTENT_KEY] = e.GetContent().to_string();
-                buffer += Json::writeString(writer, eventJson) + "\n";
+                writer.Key(DEFAULT_CONTENT_KEY.c_str());
+                writer.String(e.GetContent().to_string().c_str());
+                writer.EndObject();
+                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
             }
             break;
         default:
             break;
+    }
+    for (const auto& eventStr : tempBuffer) {
+        buffer.append(eventStr);
+        buffer.append("\n");
     }
     res = std::move(buffer);
     return true;
