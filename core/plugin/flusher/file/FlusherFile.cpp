@@ -57,7 +57,7 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipelin
     mFileWriter->set_pattern(mPattern);
 
     mBatcher.Init(Json::Value(), this, DefaultFlushStrategyOptions{
-        5 * 1024 * 1024,
+        1 * 1024 * 1024,
         1024,
         0,
         1
@@ -110,14 +110,14 @@ bool FlusherFile::SerializeAndPush(BatchedEventsList&& groupList) {
     string serializedData;
     for (auto& group : groupList) {
         string errorMsg;
-        mGroupSerializer->DoSerialize(move(group), serializedData, errorMsg);
+        mGroupSerializer->DoSerialize(std::move(group), serializedData, errorMsg);
         if (errorMsg.empty()) {
             mFileWriter->info(serializedData);
+            mFileWriter->flush();
         } else {
             LOG_ERROR(sLogger, ("serialize pipeline event group error", errorMsg));
         }
     }
-    mFileWriter->flush();
     return true;
 }
 
