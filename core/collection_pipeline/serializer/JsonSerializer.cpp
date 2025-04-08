@@ -42,8 +42,15 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         groupTags[tag.first.to_string()] = tag.second.to_string();
     }
 
+    // Use a single string buffer to avoid frequent memory allocations
+    string buffer;
+    buffer.reserve(group.mSizeBytes);
+
+    // Create a single StreamWriterBuilder outside the loop
+    Json::StreamWriterBuilder writer;
+    writer["indentation"] = "";
+
     // TODO: should support nano second
-    ostringstream oss;
     switch (eventType) {
         case PipelineEvent::Type::LOG:
             for (const auto& item : group.mEvents) {
@@ -57,9 +64,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 for (const auto& kv : e) {
                     eventJson[kv.first.to_string()] = kv.second.to_string();
                 }
-                Json::StreamWriterBuilder writer;
-                writer["indentation"] = "";
-                oss << Json::writeString(writer, eventJson) << endl;
+                buffer += Json::writeString(writer, eventJson) + "\n";
             }
             break;
         case PipelineEvent::Type::METRIC:
@@ -94,9 +99,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                         values[value->first.to_string()] = value->second.Value;
                     }
                 }
-                Json::StreamWriterBuilder writer;
-                writer["indentation"] = "";
-                oss << Json::writeString(writer, eventJson) << endl;
+                buffer += Json::writeString(writer, eventJson) + "\n";
             }
             break;
         case PipelineEvent::Type::SPAN:
@@ -115,15 +118,13 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 eventJson[JSON_KEY_TIME] = e.GetTimestamp();
                 // content
                 eventJson[DEFAULT_CONTENT_KEY] = e.GetContent().to_string();
-                Json::StreamWriterBuilder writer;
-                writer["indentation"] = "";
-                oss << Json::writeString(writer, eventJson) << endl;
+                buffer += Json::writeString(writer, eventJson) + "\n";
             }
             break;
         default:
             break;
     }
-    res = oss.str();
+    res = std::move(buffer);
     return true;
 }
 
