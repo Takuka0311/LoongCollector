@@ -48,7 +48,7 @@ def main():
 
     logger = logging.getLogger('log_generator')
     logger.setLevel(logging.INFO)
-    handler = RotatingFileHandler(args.path, maxBytes=20*1024*1024, backupCount=10)
+    handler = RotatingFileHandler(args.path, maxBytes=200*1024*1024, backupCount=10)
     formatter = logging.Formatter('%(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
