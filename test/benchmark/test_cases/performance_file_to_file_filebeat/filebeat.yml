@@ -15,3 +15,4 @@ output.file:
   path: /home/filebeat
   filename: test.out
   rotate_every_kb: 10240
+  number_of_files: 10
