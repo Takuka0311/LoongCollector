@@ -8,6 +8,5 @@ processors:
     Script: |
       * | parse-regexp content, '^([^ ]*) ([^ ]*) ([^ ]*) \[([^\]]*)\] "(\S+) ([^\"]*) (\S*)" ([^ ]*) ([^ ]*) "([^\"]*)" "([^\"]*)"' as ip, ident, auth, timestamp, method, request, http_version, response_code, bytes, referrer, user_agent
 flushers:
-  - Type: flusher_stdout
-    OnlyStdout: true
+  - Type: flusher_blackhole
 

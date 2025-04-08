@@ -20,5 +20,4 @@ processors:
       - referrer
       - user_agent
 flushers:
-  - Type: flusher_stdout
-    OnlyStdout: true
+  - Type: flusher_blackhole
