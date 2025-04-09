@@ -4,15 +4,22 @@ services:
 
   fluent-bit:
     image: cr.fluentbit.io/fluent/fluent-bit:4.0.0
-    command: >
-      sh -c "chmod +x /usr/local/bin/clear_files.sh && 
-             /usr/local/bin/clear_files.sh & 
-             /fluent-bit/bin/fluent-bit -c /tmp/main.conf"
+    command: ["-c", "/tmp/main.conf"]
     volumes:
       - ./main.conf:/tmp/main.conf
       - ./parsers.conf:/tmp/parsers.conf
       - .:/home/fluentbit
-      - ./clear_files.sh:/usr/local/bin/clear_files.sh # 挂载清理脚本
     restart: always
+
+  cleanup:
+    image: alpine:latest
+    command: >
+      sh -c "chmod +x /home/fluentbit/clear_files.sh && 
+             /home/fluentbit/clear_files.sh"
+    volumes:
+      - .:/home/fluentbit
+      - ./clear_files.sh:/home/fluentbit/clear_files.sh
+    depends_on:
+      - fluent-bit
 
 

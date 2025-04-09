@@ -6,8 +6,14 @@ services:
     volumes:
       - ./vector.yaml:/etc/vector/vector.yaml
       - .:/home/vector-log
-      - ./clear_files.sh:/usr/local/bin/clear_files.sh # 挂载清理脚本
+
+  cleanup:
+    image: alpine:latest
     command: >
-      sh -c "chmod +x /usr/local/bin/clear_files.sh && 
-             /usr/local/bin/clear_files.sh & 
-             vector --config /etc/vector/vector.yaml"
+      sh -c "chmod +x /home/vector-log/clear_files.sh && 
+             /home/vector-log/clear_files.sh"
+    volumes:
+      - .:/home/vector-log
+      - ./clear_files.sh:/home/vector-log/clear_files.sh
+    depends_on:
+      - vector
