@@ -60,10 +60,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
     for (const auto& tag : group.mTags.mInner) {
         tags[tag.first.to_string().c_str()] = tag.second.to_string().c_str();
     }
-
-    // Use a single string buffer to avoid frequent memory allocations
-    string buffer;
-    buffer.reserve(group.mSizeBytes);
+    group.mTags.Clear();
 
     // Create reusable StringBuffer and Writer
     rapidjson::StringBuffer jsonBuffer;
@@ -75,6 +72,8 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
     // Temporary buffer to store serialized events
     vector<string> tempBuffer;
     tempBuffer.reserve(group.mEvents.size());
+
+    uint64_t stringLength = 0;
 
     // TODO: should support nano second
     switch (eventType) {
@@ -92,6 +91,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 }
                 writer.EndObject();
                 tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
+                stringLength += jsonBuffer.GetSize() + 1;
             }
             break;
         case PipelineEvent::Type::METRIC:
@@ -132,6 +132,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 }
                 writer.EndObject();
                 tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
+                stringLength += jsonBuffer.GetSize() + 1;
             }
             break;
         case PipelineEvent::Type::SPAN:
@@ -152,18 +153,20 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 writer.String(e.GetContent().to_string().c_str());
                 writer.EndObject();
                 tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
+                stringLength += jsonBuffer.GetSize() + 1;
             }
             break;
         default:
             break;
     }
 
+    res.clear();
+    res.reserve(stringLength);
     // Combine all events into a single string
     for (const auto& eventStr : tempBuffer) {
-        buffer.append(eventStr);
-        buffer.append("\n");
+        res.append(eventStr);
+        res.append("\n");
     }
-    res = std::move(buffer);
     return true;
 }
 

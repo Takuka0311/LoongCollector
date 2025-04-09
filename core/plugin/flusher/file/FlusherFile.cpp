@@ -58,9 +58,9 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipelin
 
     mBatcher.Init(Json::Value(), this, DefaultFlushStrategyOptions{
         1 * 1024 * 1024,
+        512 * 1024,
         0,
-        0,
-        0
+        1
     });
     mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
     mSendCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
