@@ -56,7 +56,6 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
 
     // Temporary buffer to store serialized tags
     unordered_map<const char*, const char*> tags;
-    tags.reserve(group.mTags.mInner.size());
     for (const auto& tag : group.mTags.mInner) {
         tags[tag.first.to_string().c_str()] = tag.second.to_string().c_str();
     }
@@ -68,12 +67,6 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
     auto resetBuffer = [&jsonBuffer]() {
         jsonBuffer.Clear(); // Clear the buffer for reuse
     };
-
-    // Temporary buffer to store serialized events
-    vector<string> tempBuffer;
-    tempBuffer.reserve(group.mEvents.size());
-
-    uint64_t stringLength = 0;
 
     // TODO: should support nano second
     switch (eventType) {
@@ -90,8 +83,8 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                     writer.String(kv.second.to_string().c_str());
                 }
                 writer.EndObject();
-                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
-                stringLength += jsonBuffer.GetSize() + 1;
+                res.append(jsonBuffer.GetString());
+                res.append("\n");
             }
             break;
         case PipelineEvent::Type::METRIC:
@@ -131,8 +124,8 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                     writer.EndObject();
                 }
                 writer.EndObject();
-                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
-                stringLength += jsonBuffer.GetSize() + 1;
+                res.append(jsonBuffer.GetString());
+                res.append("\n");
             }
             break;
         case PipelineEvent::Type::SPAN:
@@ -152,21 +145,14 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 writer.Key(DEFAULT_CONTENT_KEY.c_str());
                 writer.String(e.GetContent().to_string().c_str());
                 writer.EndObject();
-                tempBuffer.emplace_back(jsonBuffer.GetString(), jsonBuffer.GetSize());
-                stringLength += jsonBuffer.GetSize() + 1;
+                res.append(jsonBuffer.GetString());
+                res.append("\n");
             }
             break;
         default:
             break;
     }
 
-    res.clear();
-    res.reserve(stringLength);
-    // Combine all events into a single string
-    for (const auto& eventStr : tempBuffer) {
-        res.append(eventStr);
-        res.append("\n");
-    }
     return true;
 }
 

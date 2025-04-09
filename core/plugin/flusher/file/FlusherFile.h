@@ -43,7 +43,7 @@ private:
     std::string mFilePath;
     uint32_t mMaxFileSize = 1024 * 1024 * 10;
     uint32_t mMaxFiles = 10;
-    // std::unique_ptr<EventGroupSerializer> mGroupSerializer;
+    std::unique_ptr<EventGroupSerializer> mGroupSerializer;
 
     CounterPtr mSendGroupCnt;
 };

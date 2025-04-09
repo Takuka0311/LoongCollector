@@ -17,13 +17,9 @@
 #include "spdlog/async.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-
 
 #include "MetricTypes.h"
 #include "collection_pipeline/queue/SenderQueueManager.h"
-#include "protobuf/sls/LogGroupSerializer.h"
 
 using namespace std;
 
@@ -59,7 +55,7 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipelin
         sName, file_sink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);
     mFileWriter->set_pattern("%v");
 
-    // mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
+    mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
     mSendGroupCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
     return true;
 }
@@ -77,19 +73,6 @@ bool FlusherFile::FlushAll() {
     return true;
 }
 
-// Helper function to serialize common fields (tags and time)
-template <typename WriterType>
-void SerializeCommonFields(const unordered_map<const char*, const char*>& tags, uint64_t timestamp, WriterType& writer) {
-    // Serialize tags
-    for (const auto& tag : tags) {
-        writer.Key(tag.first);
-        writer.String(tag.second);
-    }
-    // Serialize time
-    writer.Key("__time__");
-    writer.Uint64(timestamp);
-}
-
 bool FlusherFile::SerializeAndPush(PipelineEventGroup&& group) {
     string serializedData;
     string errorMsg;
@@ -98,116 +81,13 @@ bool FlusherFile::SerializeAndPush(PipelineEventGroup&& group) {
                     std::move(group.GetSourceBuffer()),
                     group.GetMetadata(EventGroupMetaKey::SOURCE_ID),
                     std::move(group.GetExactlyOnceCheckpoint()));
-    // mGroupSerializer->DoSerialize(std::move(g), serializedData, errorMsg);
-    if (g.mEvents.empty()) {
-        errorMsg = "empty event group";
-        return false;
+    mGroupSerializer->DoSerialize(std::move(g), serializedData, errorMsg);
+    if (errorMsg.empty()) {
+        mFileWriter->info(std::move(serializedData));
+        mFileWriter->flush();
+    } else {
+        LOG_ERROR(sLogger, ("serialize pipeline event group error", errorMsg));
     }
-
-    PipelineEvent::Type eventType = g.mEvents[0]->GetType();
-    if (eventType == PipelineEvent::Type::NONE) {
-        // should not happen
-        errorMsg = "unsupported event type in event group";
-        return false;
-    }
-
-    // Temporary buffer to store serialized tags
-    unordered_map<const char*, const char*> tags;
-    tags.reserve(g.mTags.mInner.size());
-    for (const auto& tag : g.mTags.mInner) {
-        tags[tag.first.to_string().c_str()] = tag.second.to_string().c_str();
-    }
-
-    // Create reusable StringBuffer and Writer
-    rapidjson::StringBuffer jsonBuffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(jsonBuffer);
-    auto resetBuffer = [&jsonBuffer]() {
-        jsonBuffer.Clear(); // Clear the buffer for reuse
-    };
-
-    // TODO: should support nano second
-    switch (eventType) {
-        case PipelineEvent::Type::LOG:
-            for (const auto& item : g.mEvents) {
-                const auto& e = item.Cast<LogEvent>();
-                resetBuffer();
-
-                writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
-                // contents
-                for (const auto& kv : e) {
-                    writer.Key(kv.first.to_string().c_str());
-                    writer.String(kv.second.to_string().c_str());
-                }
-                writer.EndObject();
-                mFileWriter->info(jsonBuffer.GetString());
-            }
-            break;
-        case PipelineEvent::Type::METRIC:
-            // TODO: key should support custom key
-            for (const auto& item : g.mEvents) {
-                const auto& e = item.Cast<MetricEvent>();
-                if (e.Is<std::monostate>()) {
-                    continue;
-                }
-                resetBuffer();
-
-                writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
-                // __labels__
-                writer.Key(METRIC_RESERVED_KEY_LABELS.c_str());
-                writer.StartObject();
-                for (auto tag = e.TagsBegin(); tag != e.TagsEnd(); tag++) {
-                    writer.Key(tag->first.to_string().c_str());
-                    writer.String(tag->second.to_string().c_str());
-                }
-                writer.EndObject();
-                // __name__
-                writer.Key(METRIC_RESERVED_KEY_NAME.c_str());
-                writer.String(e.GetName().to_string().c_str());
-                // __value__
-                writer.Key(METRIC_RESERVED_KEY_VALUE.c_str());
-                if (e.Is<UntypedSingleValue>()) {
-                    writer.Double(e.GetValue<UntypedSingleValue>()->mValue);
-                } else if (e.Is<UntypedMultiDoubleValues>()) {
-                    writer.StartObject();
-                    for (auto value = e.GetValue<UntypedMultiDoubleValues>()->ValuesBegin();
-                         value != e.GetValue<UntypedMultiDoubleValues>()->ValuesEnd();
-                         value++) {
-                        writer.Key(value->first.to_string().c_str());
-                        writer.Double(value->second.Value);
-                    }
-                    writer.EndObject();
-                }
-                writer.EndObject();
-                mFileWriter->info(jsonBuffer.GetString());
-            }
-            break;
-        case PipelineEvent::Type::SPAN:
-            // TODO: implement span serializer
-            LOG_ERROR(
-                sLogger,
-                ("invalid event type", "span type is not supported")("config", GetContext().GetConfigName()));
-            break;
-        case PipelineEvent::Type::RAW:
-            for (const auto& item : g.mEvents) {
-                const auto& e = item.Cast<RawEvent>();
-                resetBuffer();
-
-                writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
-                // content
-                writer.Key(DEFAULT_CONTENT_KEY.c_str());
-                writer.String(e.GetContent().to_string().c_str());
-                writer.EndObject();
-                mFileWriter->info(jsonBuffer.GetString());
-            }
-            break;
-        default:
-            break;
-    }
-
-    mFileWriter->flush();
     return true;
 }
 
