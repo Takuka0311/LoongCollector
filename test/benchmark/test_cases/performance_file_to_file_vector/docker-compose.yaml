@@ -6,3 +6,8 @@ services:
     volumes:
       - ./vector.yaml:/etc/vector/vector.yaml
       - .:/home/vector-log
+      - ./clear_files.sh:/usr/local/bin/clear_files.sh # 挂载清理脚本
+    command: >
+      sh -c "chmod +x /usr/local/bin/clear_files.sh && 
+             /usr/local/bin/clear_files.sh & 
+             vector --config /etc/vector/vector.yaml"
