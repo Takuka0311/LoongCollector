@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744104064050,
+  "lastUpdate": 1744163295211,
   "repoUrl": "https://github.com/Takuka0311/LoongCollector",
   "entries": {
     "benchmark": [
@@ -3747,6 +3747,210 @@ window.BENCHMARK_DATA = {
           {
             "name": "Memory_Usage_Avg - performance_file_to_file_loongcollectorspl",
             "value": 138.7334965610048,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yangzehua.yzh@alibaba-inc.com",
+            "name": "玄飏",
+            "username": "Takuka0311"
+          },
+          "committer": {
+            "email": "yangzehua.yzh@alibaba-inc.com",
+            "name": "玄飏",
+            "username": "Takuka0311"
+          },
+          "distinct": true,
+          "id": "384768af2fd189b31c5e747b2bb99e3fc47817e2",
+          "message": "update log rate",
+          "timestamp": "2025-04-08T09:26:43Z",
+          "tree_id": "7f37a893430eb87e79db3c83b13005a58e7b1185",
+          "url": "https://github.com/Takuka0311/LoongCollector/commit/384768af2fd189b31c5e747b2bb99e3fc47817e2"
+        },
+        "date": 1744163293655,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollectorcgo",
+            "value": 94.51687944644874,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollectorcgo",
+            "value": 91.87604351430726,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollectorcgo",
+            "value": 71.53125,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollectorcgo",
+            "value": 67.51162790697668,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 15.660421267710124,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 12.22482904717007,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 29.62890625,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 28.5153582317073,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_stdout_loongcollector",
+            "value": 17.630957569689755,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_stdout_loongcollector",
+            "value": 13.61146028681347,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_stdout_loongcollector",
+            "value": 26.91796875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_stdout_loongcollector",
+            "value": 25.681396484374982,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 17.546261270144395,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 14.07252820373824,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 26.9375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 25.980174309045218,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_stdout_loongcollectorcgo",
+            "value": 95.77995481991688,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_stdout_loongcollectorcgo",
+            "value": 92.20170387563552,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_stdout_loongcollectorcgo",
+            "value": 76.80859375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_stdout_loongcollectorcgo",
+            "value": 68.2811941964285,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_file_loongcollector",
+            "value": 27.647018538288634,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_file_loongcollector",
+            "value": 24.241235996251103,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_file_loongcollector",
+            "value": 148.68359375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_file_loongcollector",
+            "value": 139.31869865023486,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_stdout_loongcollectorspl",
+            "value": 30.13252009508588,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_stdout_loongcollectorspl",
+            "value": 26.239641232376247,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_stdout_loongcollectorspl",
+            "value": 31.96484375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_stdout_loongcollectorspl",
+            "value": 30.65854994158877,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_file_loongcollectorcgo",
+            "value": 92.05399568978615,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_file_loongcollectorcgo",
+            "value": 89.16383565904646,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_file_loongcollectorcgo",
+            "value": 70.39453125,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_file_loongcollectorcgo",
+            "value": 66.23041267942584,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_file_loongcollectorspl",
+            "value": 52.293284172866365,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_file_loongcollectorspl",
+            "value": 41.51862840849928,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_file_loongcollectorspl",
+            "value": 156.5390625,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_file_loongcollectorspl",
+            "value": 146.19988567073173,
             "unit": "MB"
           }
         ]
