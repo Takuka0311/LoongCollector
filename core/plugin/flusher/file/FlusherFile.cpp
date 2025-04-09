@@ -58,9 +58,9 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipelin
 
     mBatcher.Init(Json::Value(), this, DefaultFlushStrategyOptions{
         1 * 1024 * 1024,
-        1024,
         0,
-        1
+        0,
+        0
     });
     mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
     mSendCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
@@ -99,10 +99,10 @@ bool FlusherFile::SerializeAndPush(PipelineEventGroup&& group) {
     mGroupSerializer->DoSerialize(move(g), serializedData, errorMsg);
     if (errorMsg.empty()) {
         mFileWriter->info(serializedData);
+        mFileWriter->flush();
     } else {
         LOG_ERROR(sLogger, ("serialize pipeline event group error", errorMsg));
     }
-    mFileWriter->flush();
     return true;
 }
 
