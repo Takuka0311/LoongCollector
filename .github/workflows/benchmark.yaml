@@ -66,6 +66,12 @@ jobs:
         run: |
           sudo curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
+      
+      - name: Install Docker Buildx
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -SL https://github.com/docker/buildx/releases/download/v0.10.0/buildx-v0.10.0.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
+          chmod +x ~/.docker/cli-plugins/docker-buildx
 
       - name: System environment
         run: |
@@ -80,7 +86,7 @@ jobs:
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin
-          make benchmark DOCKER_REPOSITORY=ghcr.io/$REPO_OWNER/loongcollector DOCKER_PUSH=true VERSION=main-latest
+          make benchmark DOCKER_REPOSITORY=ghcr.io/$REPO_OWNER/loongcollector DOCKER_PUSH=true VERSION=edge
 
       # - name: Mock
       #   run: |
@@ -167,8 +173,8 @@ jobs:
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin
-          docker pull ghcr.io/$REPO_OWNER/loongcollector:main-latest
-          docker tag ghcr.io/$REPO_OWNER/loongcollector:main-latest aliyun/loongcollector:0.0.1
+          docker pull ghcr.io/$REPO_OWNER/loongcollector:edge
+          docker tag ghcr.io/$REPO_OWNER/loongcollector:edge aliyun/loongcollector:0.0.1
 
       - name: Run benchmark for agent ${{ matrix.test-agent }}
         run: |

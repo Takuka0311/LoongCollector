@@ -212,7 +212,7 @@ unittest_pluginmanager: clean import_plugins
 
 .PHONY: benchmark
 benchmark: dist
-	./scripts/docker_build.sh production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
+	./scripts/docker_build.sh multi-arch-production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
 
 
 .PHONY: all
