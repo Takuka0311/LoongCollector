@@ -74,7 +74,7 @@ jobs:
           docker --version
           go version
 
-      - name: Build LoongCollector for ${{ matrix.platform.split('/'))[1] }}
+      - name: Build LoongCollector for ${{ matrix.platform }}
         env:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
@@ -84,8 +84,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: loongcollector-edge-${{ matrix.platform.split('/'))[1] }}
-          path: dist/loongcollector-edge.${{ matrix.platform.split('/'))[1] }}.tar.gz
+          name: loongcollector-edge-${{ matrix.platform }}
+          path: dist/loongcollector-edge.*.tar.gz
 
   Build-LoongCollector-Multi-Arch-Image:
     runs-on: ubuntu-latest
