@@ -210,8 +210,8 @@ unittest_pluginmanager: clean import_plugins
 	go test $$(go list ./...|grep -Ev "telegraf|external|envconfig"| grep -E "plugin_main|pluginmanager") -coverprofile .coretestCoverage.txt
 	mv ./plugins/input/prometheus/input_prometheus.go.bak ./plugins/input/prometheus/input_prometheus.go
 
-.PHONY: benchmark
-benchmark: dist
+.PHONY: edge
+edge:
 	./scripts/docker_build.sh multi-arch-production "$(GENERATED_HOME)" "$(VERSION)" "$(DOCKER_REPOSITORY)" "$(DOCKER_PUSH)" "$(DOCKER_BUILD_USE_BUILDKIT)"
 
 

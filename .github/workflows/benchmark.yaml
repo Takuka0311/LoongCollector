@@ -28,12 +28,13 @@ on:
       - 'CHANGELOG.md'
 
 jobs:
-  Build-LoongCollector:
+  Build-LoongCollector-Linux:
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         go-version: [ 1.19.10 ]
         runner: [ ubuntu-latest ]
+        platform: [linux/amd64, linux/arm64]
     permissions:
       contents: write
       packages: write
@@ -84,18 +85,47 @@ jobs:
           docker --version
           go version
 
-      - name: Build LoongCollector image
+      - name: Build LoongCollector for ${{ matrix.platform }}
         env:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
         run: |
+          make dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loongcollector-edge-${{ matrix.platform }}
+          path: dist/loongcollector-edge.${{ matrix.platform##*/ }}.tar.gz
+
+  Build-LoongCollector-Multi-Arch-Image:
+    runs-on: ubuntu-latest
+    needs: [Build-LoongCollector-Linux]
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        run: |
+          docker buildx create --name multiarch-builder --driver docker-container --use
+          docker buildx inspect multiarch-builder
+
+      - name: Build LoongCollector image
+        run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin
-          make benchmark DOCKER_REPOSITORY=ghcr.io/$REPO_OWNER/loongcollector DOCKER_PUSH=true VERSION=edge
-
-      # - name: Mock
-      #   run: |
-      #     echo "Mock"
+          make edge DOCKER_REPOSITORY=ghcr.io/$REPO_OWNER/loongcollector DOCKER_PUSH=true VERSION=edge
 
   Benchmark:
     runs-on: ${{ matrix.runner }}
