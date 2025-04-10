@@ -63,21 +63,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Update Docker-compose to v2
-        run: |
-          sudo curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-      
-      - name: Install Docker Buildx
-        run: |
-          mkdir -p ~/.docker/cli-plugins
-          curl -SL https://github.com/docker/buildx/releases/download/v0.10.0/buildx-v0.10.0.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
-          chmod +x ~/.docker/cli-plugins/docker-buildx
-        
-      - name: Configure Buildx for multi-arch
-        run: |
-          docker buildx create --name multiarch-builder --driver docker-container --use
-          docker buildx inspect multiarch-builder
+      # - name: Update Docker-compose to v2
+      #   run: |
+      #     sudo curl -SL https://github.com/docker/compose/releases/download/v2.7.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+      #     sudo chmod +x /usr/local/bin/docker-compose
 
       - name: System environment
         run: |
@@ -85,7 +74,7 @@ jobs:
           docker --version
           go version
 
-      - name: Build LoongCollector for ${{ matrix.platform }}
+      - name: Build LoongCollector for ${{ matrix.platform.split('/'))[1] }}
         env:
           BUILD_LOGTAIL_UT: OFF
           WITHOUTGDB: ON
@@ -95,8 +84,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: loongcollector-edge-${{ matrix.platform }}
-          path: dist/loongcollector-edge.${{ matrix.platform##*/ }}.tar.gz
+          name: loongcollector-edge-${{ matrix.platform.split('/'))[1] }}
+          path: dist/loongcollector-edge.${{ matrix.platform.split('/'))[1] }}.tar.gz
 
   Build-LoongCollector-Multi-Arch-Image:
     runs-on: ubuntu-latest
