@@ -18,6 +18,7 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
+#include "Logger.h"
 #include "MetricTypes.h"
 #include "collection_pipeline/queue/SenderQueueManager.h"
 
@@ -27,7 +28,7 @@ namespace logtail {
 
 const string FlusherFile::sName = "flusher_file";
 
-bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipeline) {
+bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
     static uint32_t cnt = 0;
     GenerateQueueKey(to_string(++cnt));
     SenderQueueManager::GetInstance()->CreateQueue(mQueueKey, mPluginID, *mContext);
@@ -50,9 +51,9 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipelin
     GetMandatoryUIntParam(config, "MaxFiles", mMaxFileSize, errorMsg);
 
     // create file writer
-    auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(mFilePath, mMaxFileSize, mMaxFiles, true);
+    auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(mFilePath, mMaxFileSize, mMaxFiles, true);
     mFileWriter = std::make_shared<spdlog::async_logger>(
-        sName, file_sink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+        sName, fileSink, spdlog::thread_pool(), spdlog::async_overflow_policy::block);
     mFileWriter->set_pattern("%v");
 
     mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
@@ -65,7 +66,7 @@ bool FlusherFile::Send(PipelineEventGroup&& g) {
     return SerializeAndPush(std::move(g));
 }
 
-bool FlusherFile::Flush(size_t key) {
+bool FlusherFile::Flush(size_t) {
     return true;
 }
 
@@ -83,6 +84,9 @@ bool FlusherFile::SerializeAndPush(PipelineEventGroup&& group) {
                     std::move(group.GetExactlyOnceCheckpoint()));
     mGroupSerializer->DoSerialize(std::move(g), serializedData, errorMsg);
     if (errorMsg.empty()) {
+        if (!serializedData.empty() && serializedData.back() == '\n') {
+            serializedData.pop_back();
+        }
         mFileWriter->info(std::move(serializedData));
         mFileWriter->flush();
     } else {

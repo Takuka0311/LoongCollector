@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "collection_pipeline/serializer/JsonSerializer.h"
-#include <unordered_map>
 
 #include "constants/SpanConstants.h"
 // TODO: the following dependencies should be removed
@@ -30,11 +29,11 @@ const char* JSON_KEY_TIME = "__time__";
 
 // Helper function to serialize common fields (tags and time)
 template <typename WriterType>
-void SerializeCommonFields(const unordered_map<const char*, const char*>& tags, uint64_t timestamp, WriterType& writer) {
+void SerializeCommonFields(const SizedMap& tags, uint64_t timestamp, WriterType& writer) {
     // Serialize tags
-    for (const auto& tag : tags) {
-        writer.Key(tag.first);
-        writer.String(tag.second);
+    for (const auto& tag : tags.mInner) {
+        writer.Key(tag.first.to_string().c_str());
+        writer.String(tag.second.to_string().c_str());
     }
     // Serialize time
     writer.Key(JSON_KEY_TIME);
@@ -54,18 +53,12 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         return false;
     }
 
-    // Temporary buffer to store serialized tags
-    unordered_map<const char*, const char*> tags;
-    for (const auto& tag : group.mTags.mInner) {
-        tags[tag.first.to_string().c_str()] = tag.second.to_string().c_str();
-    }
-    group.mTags.Clear();
-
     // Create reusable StringBuffer and Writer
     rapidjson::StringBuffer jsonBuffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(jsonBuffer);
-    auto resetBuffer = [&jsonBuffer]() {
+    auto resetBuffer = [&jsonBuffer, &writer]() {
         jsonBuffer.Clear(); // Clear the buffer for reuse
+        writer.Reset(jsonBuffer);
     };
 
     // TODO: should support nano second
@@ -76,7 +69,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 resetBuffer();
 
                 writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // contents
                 for (const auto& kv : e) {
                     writer.Key(kv.first.to_string().c_str());
@@ -97,7 +90,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 resetBuffer();
 
                 writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // __labels__
                 writer.Key(METRIC_RESERVED_KEY_LABELS.c_str());
                 writer.StartObject();
@@ -140,7 +133,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 resetBuffer();
 
                 writer.StartObject();
-                SerializeCommonFields(tags, e.GetTimestamp(), writer);
+                SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // content
                 writer.Key(DEFAULT_CONTENT_KEY.c_str());
                 writer.String(e.GetContent().to_string().c_str());
