@@ -113,12 +113,18 @@ if [[ $CATEGORY != "multi-arch-production" ]]; then
         -t "$REPOSITORY":"$VERSION" \
         --no-cache -f $GEN_DOCKERFILE .
 else
+    OUTPUT_OPTION=""
+    if [[ "$PUSH" = "true" ]]; then
+        OUTPUT_OPTION="-o type=registry"
+    else
+        OUTPUT_OPTION="-o type=docker"
+    fi
     docker buildx build --platform linux/amd64,linux/arm64 \
         $BUILD_SSH_OPTS \
         --build-arg VERSION="$VERSION" \
         --build-arg HOST_OS="$HOST_OS" \
-        -t "$REPOSITORY":edge \
-        -o type=registry \
+        -t "$REPOSITORY":"$VERSION" \
+        $OUTPUT_OPTION \
         --no-cache -f $GEN_DOCKERFILE .
 fi
 
