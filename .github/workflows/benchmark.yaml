@@ -74,7 +74,7 @@ jobs:
             linux/arm64
           push: true
           file: |
-            {context}/docker/Dockerfile_edge
+            ./docker/Dockerfile_edge
           tags: ghcr.io/takuka0311/loongcollector:edge
           network: host
 
