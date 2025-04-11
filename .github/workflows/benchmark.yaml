@@ -57,8 +57,7 @@ jobs:
 
       - name: Login to Docker Hub
         run: |
-          echo "REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ env.REPO_OWNER }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u takuka0311 --password-stdin
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -76,7 +75,7 @@ jobs:
           push: true
           file: |
             {context}/docker/Dockerfile_edge
-          tags: ghcr.io/${{ env.REPO_OWNER }}/loongcollector:edge
+          tags: ghcr.io/takuka0311/loongcollector:edge
           network: host
 
   Benchmark:
