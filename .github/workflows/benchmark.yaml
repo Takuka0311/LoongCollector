@@ -32,7 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clean up space to prevent action from running out of disk space
-        if: matrix.runner == 'ubuntu-latest'
         run: |
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc

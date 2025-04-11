@@ -58,8 +58,8 @@ RUN mkdir -p "dist/loongcollector-edge" && \
     mkdir -p "dist/loongcollector-edge/conf/instance_config/local/" && \
     mkdir -p "dist/loongcollector-edge/conf/continuous_pipeline_config/local/" && \
     if file "dist/loongcollector-edge/loongcollector" | grep x86-64; then ./scripts/download_ebpflib.sh "dist/loongcollector-edge"; fi &&\
-    strip "dist/loongcollector-edge/loongcollector"
-    strip "dist/loongcollector-edge/libGoPluginAdapter.so"
+    strip "dist/loongcollector-edge/loongcollector" && \
+    strip "dist/loongcollector-edge/libGoPluginAdapter.so" && \
     strip "dist/loongcollector-edge/libGoPluginBase.so"
 
 #########################################################################################################################
