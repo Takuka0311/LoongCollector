@@ -1,0 +1,106 @@
+# Copyright 2025 iLogtail Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#########################################################################################################################
+# Step 1: Select Best Region
+#########################################################################################################################
+FROM alpine:latest AS region-selector
+
+ARG CN_REGION=sls-opensource-registry.cn-shanghai.cr.aliyuncs.com
+ARG US_REGION=sls-opensource-registry.us-east-1.cr.aliyuncs.com
+
+RUN set -xue && \
+    apk add --no-cache curl bc && \
+    cn_time_connect=$(curl -o /dev/null -s -m 3 -w "%{time_total}" https://$CN_REGION || echo 9999) && \
+    us_time_connect=$(curl -o /dev/null -s -m 4 -w "%{time_total}" https://$US_REGION || echo 9999) && \
+    REG_REGION=$CN_REGION && \
+    if [ "$(echo "$us_time_connect < $cn_time_connect" | bc)" -eq 1 ]; then \
+        REG_REGION=$US_REGION; \
+    fi && \
+    echo "cn_time_connect=$cn_time_connect us_time_connect=$us_time_connect REG_REGION=$REG_REGION" && \
+    echo "REG_REGION=$REG_REGION" > /opt/region.env
+
+#########################################################################################################################
+# Step 2: Build
+#########################################################################################################################
+FROM ${REG_REGION}/loongcollector-community-edition/loongcollector-build-linux:2.1.3 AS builder
+
+COPY --from=region-selector /opt/region.env /opt/region.env
+RUN set -xue && \
+    source /opt/region.env && \
+    echo "Using mirror: $REG_REGION"
+
+USER root
+WORKDIR /src
+# copy all files
+COPY . .
+
+# build
+RUN sh ./scripts/build.sh
+
+# make dist
+RUN mkdir -p "dist/loongcollector-edge" && \
+    cp "LICENSE README.md" "dist/loongcollector-edge" && \
+    cp "core/build/loongcollector" "dist/loongcollector-edge" && \
+    cp "core/build/go_pipeline/libGoPluginAdapter.so" "dist/loongcollector-edge" && \
+    cp "output/libGoPluginBase.so" "dist/loongcollector-edge" && \
+    mkdir -p "dist/loongcollector-edge/conf/instance_config/local/" && \
+    mkdir -p "dist/loongcollector-edge/conf/continuous_pipeline_config/local/" && \
+    if file "dist/loongcollector-edge/loongcollector" | grep x86-64; then ./scripts/download_ebpflib.sh "dist/loongcollector-edge"; fi &&\
+    strip "dist/loongcollector-edge/loongcollector"
+    strip "dist/loongcollector-edge/libGoPluginAdapter.so"
+    strip "dist/loongcollector-edge/libGoPluginBase.so"
+
+#########################################################################################################################
+# Step 3: Build image
+#########################################################################################################################
+FROM centos:centos7.9.2009
+
+ENV container docker
+
+ARG TARGETPLATFORM
+
+RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+        echo "Building for AMD64"; \
+        curl -L -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo; \
+    elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        echo "Building for ARM64"; \
+        curl -L -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-altarch-7.repo; \
+    else \
+        echo "Unsupported platform: $TARGETPLATFORM"; \
+        exit 1; \
+    fi
+
+
+RUN yum update -y && yum upgrade -y && yum -y clean all && rm -fr /var/cache && rm -rf /core.*
+
+WORKDIR /usr/local
+COPY --from=builder /src/dist/loongcollector-edge loongcollector
+RUN chown -R $(whoami) loongcollector/ && \
+    chmod 755 loongcollector/loongcollector && \
+    mkdir -p loongcollector/data/checkpoint
+
+WORKDIR /usr/local/loongcollector
+RUN mkdir -p conf/instance_config/local
+RUN mkdir -p log
+RUN mkdir -p data
+RUN mkdir -p run
+
+COPY --from=builder example_config/start_with_docker/loongcollector_config.json conf/instance_config/local/loongcollector_config.json
+COPY --from=builder scripts/loongcollector_control.sh .
+
+ENV HTTP_PROBE_PORT=7953 \
+    ALIYUN_LOGTAIL_USER_DEFINED_ID=default \
+    docker_file_cache_path=checkpoint/docker_path_config.json
+CMD ["/usr/local/loongcollector/loongcollector_control.sh", "start_and_block"]
