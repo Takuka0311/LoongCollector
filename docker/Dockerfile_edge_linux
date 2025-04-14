@@ -47,7 +47,7 @@ WORKDIR /src
 COPY . .
 
 # build
-RUN sh ./scripts/build.sh
+RUN sh ./scripts/build_edge_linux.sh
 
 # make dist
 RUN mkdir -p "dist/loongcollector-edge" && \
