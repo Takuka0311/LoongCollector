@@ -97,7 +97,7 @@ RUN mkdir -p log
 RUN mkdir -p data
 RUN mkdir -p run
 
-COPY --from=builder example_config/start_with_docker/loongcollector_config.json conf/instance_config/local/loongcollector_config.json
+COPY --from=builder example_config/start_with_docker/loongcollector_config.json conf/instance_config/local
 COPY --from=builder scripts/loongcollector_control.sh .
 
 ENV HTTP_PROBE_PORT=7953 \
