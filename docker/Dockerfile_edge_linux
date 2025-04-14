@@ -51,7 +51,8 @@ RUN sh ./scripts/build_edge_linux.sh
 
 # make dist
 RUN mkdir -p "dist/loongcollector-edge" && \
-    cp "LICENSE README.md" "dist/loongcollector-edge" && \
+    cp "LICENSE" "dist/loongcollector-edge" && \
+    cp "README.md" "dist/loongcollector-edge" && \
     cp "core/build/loongcollector" "dist/loongcollector-edge" && \
     cp "core/build/go_pipeline/libGoPluginAdapter.so" "dist/loongcollector-edge" && \
     cp "output/libGoPluginBase.so" "dist/loongcollector-edge" && \
