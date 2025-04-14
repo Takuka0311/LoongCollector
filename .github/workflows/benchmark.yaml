@@ -21,7 +21,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'example_config/**'
-      - 'docker/**'
       - 'k8s_template/**'
       - 'changes/**'
       - 'licenses/**'
