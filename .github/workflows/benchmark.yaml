@@ -38,19 +38,6 @@ jobs:
             runner: [self-hosted, Linux, ARM64]
       fail-fast: false
     steps:
-      - name: Clean up space to prevent action from running out of disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo -E apt-get -qq autoremove --purge
-          sudo -E apt-get -qq clean
-
-      - name: Check disk space
-        run: |
-          df -hT $PWD
-
       - name: Check out code
         uses: actions/checkout@v4
         with:
@@ -65,7 +52,7 @@ jobs:
 
       - name: Build linux/${{ matrix.arch }} image
         run: |
-            docker buildx build --platform linux/${{ matrix.arch }} --tag ghcr.io/takuka0311/loongcollector:edge-linux-${{ matrix.arch }} --file ./docker/Dockerfile_edge_linux --push .
+            docker buildx build --platform linux/${{ matrix.arch }} --tag ghcr.io/takuka0311/loongcollector:edge_linux_${{ matrix.arch }} --file ./docker/Dockerfile_edge_linux --push .
   
   Merge-Multiplatform-Image:
     runs-on: ubuntu-latest
@@ -81,8 +68,8 @@ jobs:
       - name: Create and push manifest
         run: |
           docker manifest create ghcr.io/takuka0311/loongcollector:edge \
-            --amend ghcr.io/takuka0311/loongcollector:edge-linux-amd64 \
-            --amend ghcr.io/takuka0311/loongcollector:edge-linux-arm64
+            --amend ghcr.io/takuka0311/loongcollector:edge_linux_amd64 \
+            --amend ghcr.io/takuka0311/loongcollector:edge_linux_arm64
           docker manifest push ghcr.io/takuka0311/loongcollector:edge
 
   Benchmark:
