@@ -20,4 +20,5 @@ processors:
       - referrer
       - user_agent
 flushers:
-  - Type: flusher_blackhole
+  - Type: flusher_file
+    FilePath: /home/loongcollector/test.out
