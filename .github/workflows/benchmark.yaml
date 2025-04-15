@@ -55,16 +55,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u takuka0311 --password-stdin
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Build linux/${{ matrix.arch }} image
         run: |
