@@ -46,24 +46,26 @@ WORKDIR /src
 # copy all files
 COPY . .
 
-# build
-RUN sh ./scripts/build_edge_linux.sh
-
-# make dist
-RUN mkdir -p "dist/loongcollector-edge" && \
+# build and make dist
+RUN sh ./scripts/build_edge_linux.sh && \
+    mkdir -p "dist/loongcollector-edge" && \
+    mkdir -p "dist/loongcollector-edge/conf/instance_config/local/" && \
+    mkdir -p "dist/loongcollector-edge/conf/continuous_pipeline_config/local/" && \
+    mkdir -p "dist/loongcollector-edge/data/checkpoint" && \
+    mkdir -p "dist/loongcollector-edge/log" && \
+    mkdir -p "dist/loongcollector-edge/run" && \
     cp "LICENSE" "dist/loongcollector-edge" && \
     cp "README.md" "dist/loongcollector-edge" && \
     cp "scripts/loongcollector_control.sh" "dist/loongcollector-edge" && \
     cp "core/build/loongcollector" "dist/loongcollector-edge" && \
     cp "core/build/go_pipeline/libGoPluginAdapter.so" "dist/loongcollector-edge" && \
     cp "output/libGoPluginBase.so" "dist/loongcollector-edge" && \
-    mkdir -p "dist/loongcollector-edge/conf/instance_config/local/" && \
     cp "example_config/start_with_docker/loongcollector_config.json" "dist/loongcollector-edge/conf/instance_config/local/" && \
-    mkdir -p "dist/loongcollector-edge/conf/continuous_pipeline_config/local/" && \
     if file "dist/loongcollector-edge/loongcollector" | grep x86-64; then ./scripts/download_ebpflib.sh "dist/loongcollector-edge"; fi &&\
     strip "dist/loongcollector-edge/loongcollector" && \
     strip "dist/loongcollector-edge/libGoPluginAdapter.so" && \
-    strip "dist/loongcollector-edge/libGoPluginBase.so"
+    strip "dist/loongcollector-edge/libGoPluginBase.so" && \
+    chmod 755 "dist/loongcollector-edge/loongcollector"
 
 #########################################################################################################################
 # Step 3: Build image
@@ -76,28 +78,26 @@ ARG TARGETPLATFORM
 
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         echo "Building for AMD64"; \
-        curl -L -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo; \
+        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo; && \
+        rm -rf /var/cache/yum/*; \
     elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
         echo "Building for ARM64"; \
-        curl -L -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-altarch-7.repo; \
+        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-altarch-7.repo; && \
+        rm -rf /var/cache/yum/*; \
     else \
         echo "Unsupported platform: $TARGETPLATFORM"; \
         exit 1; \
     fi
 
 
-RUN yum update -y && yum upgrade -y && yum -y clean all && rm -fr /var/cache && rm -rf /core.*
+RUN yum update -y && yum upgrade -y && \
+    yum -y clean all && rm -fr /var/cache && rm -rf /core.* && \
+    rm -rf /tmp/* /var/tmp/*
 
 WORKDIR /usr/local
-COPY --from=builder /src/dist/loongcollector-edge loongcollector
-RUN chown -R $(whoami) loongcollector/ && \
-    chmod 755 loongcollector/loongcollector && \
-    mkdir -p loongcollector/data/checkpoint
+COPY --from=builder --chown=$(whoami) /src/dist/loongcollector-edge loongcollector
 
 WORKDIR /usr/local/loongcollector
-RUN mkdir -p log
-RUN mkdir -p data
-RUN mkdir -p run
 
 ENV HTTP_PROBE_PORT=7953 \
     ALIYUN_LOGTAIL_USER_DEFINED_ID=default \
