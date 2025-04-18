@@ -70,27 +70,23 @@ RUN sh ./scripts/build_edge_linux.sh && \
 #########################################################################################################################
 # Step 3: Build image
 #########################################################################################################################
-FROM centos:centos7.9.2009 as artifact
+FROM centos:centos7.9.2009
 
-ENV container docker
+ENV container=docker
 
 ARG TARGETPLATFORM
 
 RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         echo "Building for AMD64"; \
-        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo; && \
-        rm -rf /var/cache/yum/*; \
+        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo; \
     elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
         echo "Building for ARM64"; \
-        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-altarch-7.repo; && \
-        rm -rf /var/cache/yum/*; \
+        curl -L --silent --show-error -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-altarch-7.repo; \
     else \
         echo "Unsupported platform: $TARGETPLATFORM"; \
         exit 1; \
-    fi
-
-
-RUN yum update -y && yum upgrade -y && \
+    fi \
+    yum update -y && yum upgrade -y && \
     yum -y clean all && rm -fr /var/cache && rm -rf /core.* && \
     rm -rf /tmp/* /var/tmp/*
 
@@ -98,7 +94,6 @@ WORKDIR /usr/local
 COPY --from=builder --chown=$(whoami) /src/dist/loongcollector-edge loongcollector
 
 WORKDIR /usr/local/loongcollector
-
 ENV HTTP_PROBE_PORT=7953 \
     ALIYUN_LOGTAIL_USER_DEFINED_ID=default \
     docker_file_cache_path=checkpoint/docker_path_config.json
