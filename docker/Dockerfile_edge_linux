@@ -86,7 +86,8 @@ RUN if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
         echo "Unsupported platform: $TARGETPLATFORM"; \
         exit 1; \
     fi \
-    yum update -y && yum upgrade -y && \
+
+RUN yum update -y && yum upgrade -y && \
     yum -y clean all && rm -fr /var/cache && rm -rf /core.* && \
     rm -rf /tmp/* /var/tmp/*
 
