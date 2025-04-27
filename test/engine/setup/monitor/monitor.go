@@ -156,16 +156,6 @@ func (m *Monitor) monitoring(client *client.Client, containerName string, timeou
 				m.statistic.ClearStatistic()
 				return
 			}
-		case <-timeoutTimer.C:
-			logger.Error(context.Background(), "MONITOR_TIMEOUT_ALARM", "Monitoring timeout after", timeout, "minutes")
-			bytes, _ := m.statistic.MarshalStatisticJSON()
-			_ = os.WriteFile(statisticFile, bytes, 0600)
-			bytes, _ = m.statistic.MarshalRecordsJSON()
-			_ = os.WriteFile(recordsFile, bytes, 0600)
-			m.isMonitoring.Store(false)
-			m.stopCh <- exitCodeErrorTimeout
-			m.statistic.ClearStatistic()
-			return
 		}
 	}
 }

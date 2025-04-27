@@ -2,7 +2,7 @@
 Feature: performance file to file vector
   Performance file to file vector
 
-  @e2e-performance @docker-compose @vector-file
+  @e2e-performance @docker-compose @vector
   Scenario: PerformanceFileToFileVector
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

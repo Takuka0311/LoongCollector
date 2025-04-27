@@ -2,7 +2,7 @@
 Feature: performance file to blackhole LoongCollector-CGo
   Performance file to blackhole LoongCollector-CGo
 
-  @e2e-performance @docker-compose @LoongCollectorCGo
+  @e2e-performance @docker-compose @loongcollector-cgo
   Scenario: PerformanceFileToBlackholeLoongCollectorCGo
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

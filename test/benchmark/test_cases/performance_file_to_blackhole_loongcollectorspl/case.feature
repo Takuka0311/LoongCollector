@@ -2,7 +2,7 @@
 Feature: performance file to blackhole LoongCollector-SPL
   Performance file to blackhole LoongCollector-SPL
 
-  @e2e-performance @docker-compose @LoongCollectorSPL
+  @e2e-performance @docker-compose @loongcollector-spl
   Scenario: PerformanceFileToBlackholeLoongCollectorSPL
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

@@ -16,7 +16,6 @@ name: Benchmark
 
 on:
   push:
-  push:
     branches:
       - benchmark
     paths-ignore:
@@ -74,32 +73,10 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        test-agent: 
-          - "LoongCollector"
-          - "LoongCollectorCGo"
-          - "LoongCollectorSPL"
-          # - "filebeat"
-          # - "vector"
-          - "fluentbit-3.2.10"
-          - "fluentbit-4.0.0"
-          - "LoongCollector-file"
-          - "LoongCollector-file-3.0.5"
-          - "LoongCollectorCGo-file"
-          - "LoongCollectorSPL-file"
-          # - "filebeat-file"
-          # - "vector-file"
-          - "fluentbit-3.2.10-file"
-          - "fluentbit-4.0.0-file"
-          # - "LoongCollector-stdout"
-          # - "LoongCollectorCGo-stdout"
-          # - "LoongCollectorSPL-stdout"
-          # - "filebeat-stdout"
-          # - "vector-stdout"
-          # - "fluentbit-3.2.10-stdout"
-          # - "fluentbit-4.0.0-stdout"
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
+        test-agent: ["loongcollector", "loongcollector-cgo", "loongcollector-spl", "filebeat", "vector", "fluentbit", "loongcollector-3.0.5"]
       fail-fast: false
     permissions:
       contents: write
@@ -117,7 +94,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -159,37 +136,7 @@ jobs:
     needs: [ Benchmark ]
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Download benchmark results
-        uses: actions/download-artifact@v4
-        with:
-          path: test/benchmark/report/
-          merge-multiple: true
-
-      - name: Display structure of downloaded files and merge
-        run: |
-          ls -R test/benchmark/report/
-          ./scripts/benchmark_collect_result.sh
-          ls -R test/benchmark/report/
-
-      - name: Store benchmark result LoongCollector
-      
-      - name: Upload benchmark result for agent ${{ matrix.test-agent }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results-${{ matrix.test-agent }}
-          path: test/benchmark/report
-
-  result:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: [ Benchmark ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -211,10 +158,8 @@ jobs:
           name: benchmark
           tool: "customSmallerIsBetter"
           output-file-path: "test/benchmark/report/loongcollector_statistic_all.json"
-          output-file-path: "test/benchmark/report/loongcollector_statistic_all.json"
           auto-push: false
           summary-always: true
-
 
       - name: Store benchmark result other agents
         run: |
