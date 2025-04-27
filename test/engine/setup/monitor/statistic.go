@@ -8,6 +8,8 @@ import (
 
 	"github.com/alibaba/ilogtail/pkg/logger"
 	v1 "github.com/google/cadvisor/info/v1"
+
+	"github.com/alibaba/ilogtail/pkg/logger"
 )
 
 type Info struct {
