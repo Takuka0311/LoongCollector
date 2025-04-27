@@ -2,7 +2,7 @@
 Feature: performance file to file LoongCollector
   Performance file to file LoongCollector
 
-  @e2e-performance @docker-compose @loongcollector
+  @e2e-performance @docker-compose @loongcollector-file
   Scenario: PerformanceFileToFileLoongCollector
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

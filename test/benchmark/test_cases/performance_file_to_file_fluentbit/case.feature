@@ -2,7 +2,7 @@
 Feature: performance file to file fluentbit
   Performance file to file fluentbit
 
-  @e2e-performance @docker-compose @fluentbit
+  @e2e-performance @docker-compose @fluentbit-file
   Scenario: PerformanceFileToFileFluentbit
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}

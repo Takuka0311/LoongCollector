@@ -73,10 +73,23 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        test-agent: 
+          - "loongcollector-blackhole"
+          - "loongcollector-spl-blackhole"
+          - "loongcollector-cgo-blackhole"
+          - "filebeat-blackhole"
+          - "fluentbit-blackhole"
+          - "vector-blackhole"
+          - "loongcollector-file"
+          - "loongcollector-3.0.5-file"
+          - "loongcollector-spl-file"
+          - "loongcollector-cgo-file"
+          - "filebeat-file"
+          - "fluentbit-file"
+          - "vector-file"
         go-version: [ 1.19.10 ]
         python-version: [ 3.8 ]
         runner: [ ubuntu-latest ]
-        test-agent: ["loongcollector", "loongcollector-cgo", "loongcollector-spl", "filebeat", "vector", "fluentbit", "loongcollector-3.0.5"]
       fail-fast: false
     permissions:
       contents: write
@@ -110,7 +123,7 @@ jobs:
           go version
 
       - name: Pull Docker image from GitHub Packages
-        if: contains(matrix.test-agent, 'LoongCollector')
+        if: contains(matrix.test-agent, 'loongcollector')
         run: |
           REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $REPO_OWNER --password-stdin

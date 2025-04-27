@@ -2,7 +2,7 @@
 Feature: performance file to file LoongCollector 3.0.5
   Performance file to file LoongCollector 3.0.5
 
-  @e2e-performance @docker-compose @loongcollector-3.0.5
+  @e2e-performance @docker-compose @loongcollector-3.0.5-file
   Scenario: PerformanceFileToFileLoongCollector3.0.5
     Given {docker-compose} environment
     Given docker-compose boot type {benchmark}
