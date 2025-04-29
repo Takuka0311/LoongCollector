@@ -16,7 +16,6 @@
 
 #include "spdlog/async.h"
 #include "spdlog/sinks/rotating_file_sink.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
 
 #include "Logger.h"
 #include "MetricTypes.h"
@@ -48,7 +47,7 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
     // MaxFileSize
     GetMandatoryUIntParam(config, "MaxFileSize", mMaxFileSize, errorMsg);
     // MaxFiles
-    GetMandatoryUIntParam(config, "MaxFiles", mMaxFileSize, errorMsg);
+    GetMandatoryUIntParam(config, "MaxFiles", mMaxFiles, errorMsg);
 
     // create file writer
     auto threadPool = std::make_shared<spdlog::details::thread_pool>(10, 1);
@@ -63,11 +62,10 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
 }
 
 bool FlusherFile::Send(PipelineEventGroup&& g) {
-    ADD_COUNTER(mSendGroupCnt, 1);
     return SerializeAndPush(std::move(g));
 }
 
-bool FlusherFile::Flush(size_t) {
+bool FlusherFile::Flush(size_t key) {
     return true;
 }
 

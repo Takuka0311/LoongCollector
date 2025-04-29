@@ -14,18 +14,12 @@
 
 #include "collection_pipeline/serializer/JsonSerializer.h"
 
-#include "constants/SpanConstants.h"
-// TODO: the following dependencies should be removed
-#include "protobuf/sls/LogGroupSerializer.h"
-
-#include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 using namespace std;
 
 namespace logtail {
-
-const char* JSON_KEY_TIME = "__time__";
 
 // Helper function to serialize common fields (tags and time)
 template <typename WriterType>
@@ -36,7 +30,7 @@ void SerializeCommonFields(const SizedMap& tags, uint64_t timestamp, WriterType&
         writer.String(tag.second.to_string().c_str());
     }
     // Serialize time
-    writer.Key(JSON_KEY_TIME);
+    writer.Key("__time__");
     writer.Uint64(timestamp);
 }
 
@@ -50,6 +44,9 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
     if (eventType == PipelineEvent::Type::NONE) {
         // should not happen
         errorMsg = "unsupported event type in event group";
+        return false;
+    } else if (eventType == PipelineEvent::Type::SPAN) {
+        errorMsg = "invalid event type, span type is not yet supported";
         return false;
     }
 
@@ -66,6 +63,9 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         case PipelineEvent::Type::LOG:
             for (const auto& item : group.mEvents) {
                 const auto& e = item.Cast<LogEvent>();
+                if (e.Empty()) {
+                    continue;
+                }
                 resetBuffer();
 
                 writer.StartObject();
@@ -92,7 +92,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 writer.StartObject();
                 SerializeCommonFields(group.mTags, e.GetTimestamp(), writer);
                 // __labels__
-                writer.Key(METRIC_RESERVED_KEY_LABELS.c_str());
+                writer.Key("__labels__");
                 writer.StartObject();
                 for (auto tag = e.TagsBegin(); tag != e.TagsEnd(); tag++) {
                     writer.Key(tag->first.to_string().c_str());
@@ -100,10 +100,10 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 }
                 writer.EndObject();
                 // __name__
-                writer.Key(METRIC_RESERVED_KEY_NAME.c_str());
+                writer.Key("__name__");
                 writer.String(e.GetName().to_string().c_str());
                 // __value__
-                writer.Key(METRIC_RESERVED_KEY_VALUE.c_str());
+                writer.Key("__value__");
                 if (e.Is<UntypedSingleValue>()) {
                     writer.Double(e.GetValue<UntypedSingleValue>()->mValue);
                 } else if (e.Is<UntypedMultiDoubleValues>()) {
@@ -121,15 +121,12 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
                 res.append("\n");
             }
             break;
-        case PipelineEvent::Type::SPAN:
-            // TODO: implement span serializer
-            LOG_ERROR(
-                sLogger,
-                ("invalid event type", "span type is not supported")("config", mFlusher->GetContext().GetConfigName()));
-            break;
         case PipelineEvent::Type::RAW:
             for (const auto& item : group.mEvents) {
                 const auto& e = item.Cast<RawEvent>();
+                if (e.GetContent().empty()) {
+                    continue;
+                }
                 resetBuffer();
 
                 writer.StartObject();
@@ -145,8 +142,7 @@ bool JsonEventGroupSerializer::Serialize(BatchedEvents&& group, string& res, str
         default:
             break;
     }
-
-    return true;
+    return !res.empty();
 }
 
 } // namespace logtail
