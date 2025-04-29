@@ -17,8 +17,6 @@
 #include "spdlog/async.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 
-#include "Logger.h"
-#include "MetricTypes.h"
 #include "collection_pipeline/queue/SenderQueueManager.h"
 
 using namespace std;
@@ -27,7 +25,7 @@ namespace logtail {
 
 const string FlusherFile::sName = "flusher_file";
 
-bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
+bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipeline) {
     static uint32_t cnt = 0;
     GenerateQueueKey(to_string(++cnt));
     SenderQueueManager::GetInstance()->CreateQueue(mQueueKey, mPluginID, *mContext);
@@ -57,7 +55,7 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
     mFileWriter->set_pattern("%v");
 
     mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
-    mSendGroupCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
+    mSendCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
     return true;
 }
 

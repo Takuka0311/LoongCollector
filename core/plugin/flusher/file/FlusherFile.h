@@ -45,7 +45,7 @@ private:
     uint32_t mMaxFiles = 10;
     std::unique_ptr<EventGroupSerializer> mGroupSerializer;
 
-    CounterPtr mSendGroupCnt;
+    CounterPtr mSendCnt;
 };
 
 } // namespace logtail
