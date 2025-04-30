@@ -16,10 +16,7 @@
 
 #include "spdlog/async.h"
 #include "spdlog/sinks/rotating_file_sink.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
 
-#include "Logger.h"
-#include "MetricTypes.h"
 #include "collection_pipeline/queue/SenderQueueManager.h"
 
 using namespace std;
@@ -28,7 +25,7 @@ namespace logtail {
 
 const string FlusherFile::sName = "flusher_file";
 
-bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
+bool FlusherFile::Init(const Json::Value& config, Json::Value& optionalGoPipeline) {
     static uint32_t cnt = 0;
     GenerateQueueKey(to_string(++cnt));
     SenderQueueManager::GetInstance()->CreateQueue(mQueueKey, mPluginID, *mContext);
@@ -48,7 +45,7 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
     // MaxFileSize
     GetMandatoryUIntParam(config, "MaxFileSize", mMaxFileSize, errorMsg);
     // MaxFiles
-    GetMandatoryUIntParam(config, "MaxFiles", mMaxFileSize, errorMsg);
+    GetMandatoryUIntParam(config, "MaxFiles", mMaxFiles, errorMsg);
 
     // create file writer
     auto threadPool = std::make_shared<spdlog::details::thread_pool>(10, 1);
@@ -58,16 +55,15 @@ bool FlusherFile::Init(const Json::Value& config, Json::Value&) {
     mFileWriter->set_pattern("%v");
 
     mGroupSerializer = make_unique<JsonEventGroupSerializer>(this);
-    mSendGroupCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
+    mSendCnt = GetMetricsRecordRef().CreateCounter(METRIC_PLUGIN_FLUSHER_OUT_EVENT_GROUPS_TOTAL);
     return true;
 }
 
 bool FlusherFile::Send(PipelineEventGroup&& g) {
-    ADD_COUNTER(mSendGroupCnt, 1);
     return SerializeAndPush(std::move(g));
 }
 
-bool FlusherFile::Flush(size_t) {
+bool FlusherFile::Flush(size_t key) {
     return true;
 }
 
