@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1746426085371,
+  "lastUpdate": 1747643466159,
   "repoUrl": "https://github.com/Takuka0311/LoongCollector",
   "entries": {
     "benchmark": [
@@ -6571,6 +6571,110 @@ window.BENCHMARK_DATA = {
           {
             "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
             "value": 26.326069078947363,
+            "unit": "MB"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "committer": {
+            "email": "1914426213@qq.com",
+            "name": "Takuka0311",
+            "username": "Takuka0311"
+          },
+          "distinct": true,
+          "id": "d1e826725dd8162c31c0ead39e3dceb3c6fc8996",
+          "message": "add retry and test",
+          "timestamp": "2025-05-19T16:15:52+08:00",
+          "tree_id": "b8ec8dbe1bf61fe03a31eab3d2e6091f39da4b97",
+          "url": "https://github.com/Takuka0311/LoongCollector/commit/d1e826725dd8162c31c0ead39e3dceb3c6fc8996"
+        },
+        "date": 1747643465193,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "CPU_Usage_Max - performance_file_to_file_loongcollectorspl",
+            "value": 39.97946188755229,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_file_loongcollectorspl",
+            "value": 34.11670279657675,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_file_loongcollectorspl",
+            "value": 35.546875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_file_loongcollectorspl",
+            "value": 34.64126536885243,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 14.237767371701919,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 11.686480834524192,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollectorspl",
+            "value": 29.37109375,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollectorspl",
+            "value": 28.16950017755685,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 15.407064158860162,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 12.800844877765963,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_blackhole_loongcollector",
+            "value": 27.54296875,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_blackhole_loongcollector",
+            "value": 26.609008114640893,
+            "unit": "MB"
+          },
+          {
+            "name": "CPU_Usage_Max - performance_file_to_file_loongcollectorcgo",
+            "value": 100.43097424519463,
+            "unit": "%"
+          },
+          {
+            "name": "CPU_Usage_Avg - performance_file_to_file_loongcollectorcgo",
+            "value": 93.46326940528515,
+            "unit": "%"
+          },
+          {
+            "name": "Memory_Usage_Max - performance_file_to_file_loongcollectorcgo",
+            "value": 74.05078125,
+            "unit": "MB"
+          },
+          {
+            "name": "Memory_Usage_Avg - performance_file_to_file_loongcollectorcgo",
+            "value": 65.72909878554503,
             "unit": "MB"
           }
         ]
