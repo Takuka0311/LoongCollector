@@ -15,6 +15,7 @@
 package pluginmanager
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -61,6 +62,7 @@ func (wrapper *AggregatorWrapperV1) Add(loggroup *protocol.LogGroup) error {
 	}
 	select {
 	case wrapper.LogGroupsChan <- loggroup:
+		logger.Debug(context.Background(), "AGGREGATOR_ADD", "loggroup", loggroup)
 		return nil
 	default:
 		return errAggAdd
@@ -95,6 +97,7 @@ func (wrapper *AggregatorWrapperV1) Run(control *pipeline.AsyncControl) {
 			if len(logGroup.Logs) == 0 {
 				continue
 			}
+			logger.Info(context.Background(), "AGGREGATOR_FLUSH", "flush aggregator")
 			wrapper.outEventsTotal.Add(int64(len(logGroup.GetLogs())))
 			wrapper.outEventGroupsTotal.Add(1)
 			wrapper.outSizeBytes.Add(int64(logGroup.Size()))

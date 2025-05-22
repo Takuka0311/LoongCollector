@@ -312,11 +312,13 @@ func (p *pluginv1Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 	for {
 		select {
 		case <-cc.CancelToken():
+			logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSHER_SHUTDOWN", "config", p.LogstoreConfig.ConfigName)
 			if len(p.LogGroupsChan) == 0 {
 				return
 			}
 
 		case logGroup = <-p.LogGroupsChan:
+			logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSHER_RECEIVE_LOGS", "get loggroup", "config", p.LogstoreConfig.ConfigName)
 			if logGroup == nil {
 				continue
 			}
@@ -328,6 +330,7 @@ func (p *pluginv1Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 				logGroups[i] = <-p.LogGroupsChan
 			}
 
+			logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSHER_RECEIVE_LOGS", "add ip", "config", p.LogstoreConfig.ConfigName)
 			for _, logGroup := range logGroups {
 				if len(logGroup.Logs) == 0 {
 					continue
@@ -349,6 +352,8 @@ func (p *pluginv1Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 				}
 				if allReady {
 					for _, flusher := range p.FlusherPlugins {
+						logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSH_DATA", "flush loggroup", p.LogstoreConfig.ProjectName,
+							p.LogstoreConfig.LogstoreName, p.LogstoreConfig.ConfigName, logGroups)
 						err := flusher.Flush(p.LogstoreConfig.ProjectName,
 							p.LogstoreConfig.LogstoreName, p.LogstoreConfig.ConfigName, logGroups)
 						if err != nil {
@@ -359,6 +364,7 @@ func (p *pluginv1Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 					break
 				}
 				if !p.LogstoreConfig.FlushOutFlag.Load() {
+					logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "flush loggroup to slice, loggroup count", listLen)
 					time.Sleep(time.Duration(10) * time.Millisecond)
 					continue
 				}

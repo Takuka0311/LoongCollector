@@ -15,6 +15,7 @@
 package kafkav2
 
 import (
+	"context"
 	cryptorand "crypto/rand"
 	"errors"
 	"fmt"
@@ -163,6 +164,7 @@ type convertConfig struct {
 
 // NewFlusherKafka Kafka flusher default config
 func NewFlusherKafka() *FlusherKafka {
+	logger.Info(context.Background(), "FLUSHER_KAFKA_INIT", "new kafka flusher")
 	return &FlusherKafka{
 		Brokers:            nil,
 		ClientID:           "LogtailPlugin",
@@ -276,6 +278,7 @@ func (k *FlusherKafka) Init(context pipeline.Context) error {
 
 	k.producer = producer
 	k.isTerminal = SIGTERM
+	logger.Info(k.context.GetRuntimeContext(), "FLUSHER_INIT", "init kafka flusher success")
 	return nil
 }
 
@@ -284,6 +287,7 @@ func (k *FlusherKafka) Description() string {
 }
 
 func (k *FlusherKafka) Flush(projectName string, logstoreName string, configName string, logGroupList []*protocol.LogGroup) error {
+	logger.Info(context.Background(), "FLUSHER_FLUSH", "flush kafka flusher", "project", projectName, "logstore", logstoreName, "config", configName)
 	for _, logGroup := range logGroupList {
 		logger.Debug(k.context.GetRuntimeContext(), "[LogGroup] topic", logGroup.Topic, "logstore", logGroup.Category, "logcount", len(logGroup.Logs), "tags", logGroup.LogTags)
 		logs, values, err := k.converter.ToByteStreamWithSelectedFields(logGroup, k.topicKeys)
@@ -298,6 +302,7 @@ func (k *FlusherKafka) Flush(projectName string, logstoreName string, configName
 }
 
 func (k *FlusherKafka) Export(groupEventsArray []*models.PipelineGroupEvents, ctx pipeline.PipelineContext) error {
+	logger.Info(k.context.GetRuntimeContext(), "FLUSHER_EXPORT", "export kafka")
 	for _, groupEvents := range groupEventsArray {
 		logger.Debug(k.context.GetRuntimeContext(), "[GroupEvents] events count", len(groupEvents.Events),
 			"tags", groupEvents.Group.GetTags().Iterator())
@@ -338,7 +343,15 @@ func (k *FlusherKafka) flush(log []byte, valueMap map[string]string) {
 			m.Key = k.hashPartitionKey(valueMap, k.defaultHashKey)
 		}
 	}
-	k.producer.Input() <- m
+
+	select {
+	case k.producer.Input() <- m:
+		logger.Debug(k.context.GetRuntimeContext(), "send message to kafka")
+	case <-time.After(100 * time.Millisecond):
+		logger.Error(k.context.GetRuntimeContext(), "FLUSHER_FLUSH_ALARM", "flush kafka input channel timeout")
+	default:
+		logger.Warning(k.context.GetRuntimeContext(), "FLUSHER_FLUSH_WARN", "flush kafka input channel full")
+	}
 }
 
 func (k *FlusherKafka) hashPartitionKey(valueMap map[string]string, defaultKey string) sarama.StringEncoder {
@@ -366,6 +379,7 @@ func (k *FlusherKafka) IsReady(projectName string, logstoreName string, logstore
 // Stop ...
 func (k *FlusherKafka) Stop() error {
 	err := k.producer.Close()
+	logger.Info(k.context.GetRuntimeContext(), "FLUSHER_KAFKA_ALARM", "FlusherKafka Stop")
 	close(k.isTerminal)
 	return err
 }

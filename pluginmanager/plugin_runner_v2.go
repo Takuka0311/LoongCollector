@@ -330,11 +330,13 @@ func (p *pluginv2Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 	for {
 		select {
 		case <-cc.CancelToken():
+			logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSHER_SHUTDOWN", "config", p.LogstoreConfig.ConfigName)
 			if len(pipeChan) == 0 {
 				return
 			}
 
 		case event := <-pipeChan:
+			logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSHER_RECEIVE_LOGS", "get pipelineEventGroup", "config", p.LogstoreConfig.ConfigName)
 			if event == nil {
 				continue
 			}
@@ -360,6 +362,8 @@ func (p *pluginv2Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 				}
 				if allReady {
 					for _, flusher := range p.FlusherPlugins {
+						logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSH_DATA", "flush data",
+							p.LogstoreConfig.ProjectName, p.LogstoreConfig.LogstoreName)
 						err := flusher.Export(data, p.FlushPipeContext)
 						if err != nil {
 							logger.Error(p.LogstoreConfig.Context.GetRuntimeContext(), "FLUSH_DATA_ALARM", "flush data error",
@@ -369,6 +373,7 @@ func (p *pluginv2Runner) runFlusherInternal(cc *pipeline.AsyncControl) {
 					break
 				}
 				if !p.LogstoreConfig.FlushOutFlag.Load() {
+					logger.Info(p.LogstoreConfig.Context.GetRuntimeContext(), "flush loggroup to slice, loggroup count", dataSize)
 					time.Sleep(time.Duration(10) * time.Millisecond)
 					continue
 				}

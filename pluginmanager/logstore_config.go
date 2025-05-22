@@ -304,6 +304,7 @@ func hasDockerStdoutInput(plugins map[string]interface{}) bool {
 }
 
 func createLogstoreConfig(project string, logstore string, configName string, logstoreKey int64, jsonStr string) (*LogstoreConfig, error) {
+	logger.Infof(context.Background(), "create logstore config", project, logstore, configName, logstoreKey, "\n"+jsonStr)
 	var err error
 	contextImp := &ContextImp{}
 	contextImp.InitContext(project, logstore, configName)
@@ -613,11 +614,13 @@ func fetchPluginVersion(config map[string]interface{}) ConfigVersion {
 func initPluginRunner(lc *LogstoreConfig) (PluginRunner, error) {
 	switch lc.Version {
 	case v1:
+		logger.Infof(lc.Context.GetRuntimeContext(), "init plugin runner v1")
 		return &pluginv1Runner{
 			LogstoreConfig: lc,
 			FlushOutStore:  NewFlushOutStore[protocol.LogGroup](),
 		}, nil
 	case v2:
+		logger.Infof(lc.Context.GetRuntimeContext(), "init plugin runner v2")
 		return &pluginv2Runner{
 			LogstoreConfig: lc,
 			FlushOutStore:  NewFlushOutStore[models.PipelineGroupEvents](),

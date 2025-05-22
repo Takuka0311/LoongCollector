@@ -100,6 +100,7 @@ func addToQueueWithRetry(context context.Context, queue pipeline.LogGroupQueue, 
 func (p *AggregatorContext) Add(log *protocol.Log, ctx map[string]interface{}) error {
 	// when logGroupPoolMap is full flush all logGroup to queue
 	if p.logGroupPoolSize > MaxLogGroupPoolSize {
+		logger.Info(context.Background(), "AGGREGATOR_POOL_FULL", "flush loggroups")
 		logGroups := p.Flush()
 		for _, logGroup := range logGroups {
 			if len(logGroup.Logs) == 0 {
