@@ -35,4 +35,10 @@ your changes, such as:
 
 - [public] [both] [updated] add a new feature
 
+
+## [0.1.10] - 2025-08-28
+
+See [changes/v0.1.10.md](changes/v0.1.10.md) for details.
+
 ## [Unreleased]
+
