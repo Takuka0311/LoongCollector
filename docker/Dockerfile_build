@@ -19,6 +19,6 @@ WORKDIR /src
 COPY . .
 
 ARG HOST_OS=Linux
-ARG VERSION=0.0.3
+ARG VERSION=0.0.4
 
 RUN --mount=type=ssh sh generated_files/gen_build.sh
