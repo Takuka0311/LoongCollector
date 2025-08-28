@@ -45,5 +45,10 @@ See [changes/v0.1.10.md](changes/v0.1.10.md) for details.
 
 See [changes/v0.1.11.md](changes/v0.1.11.md) for details.
 
+
+## [0.1.12] - 2025-08-28
+
+See [changes/v0.1.12.md](changes/v0.1.12.md) for details.
+
 ## [Unreleased]
 
