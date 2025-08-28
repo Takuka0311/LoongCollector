@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM --platform=$TARGETPLATFORM ubuntu:25.10 AS build
-ARG VERSION=0.0.1
+ARG VERSION=0.1.4
 ARG TARGETPLATFORM
 WORKDIR /usr/local
 COPY dist/loongcollector-${VERSION}.linux-*.tar.gz .
@@ -25,7 +25,7 @@ LABEL maintainer="TomYu <yyuuttaaoo@gmail.com>"
 ENV container=docker
 
 ARG HOST_OS=Linux
-ARG VERSION=0.0.1
+ARG VERSION=0.1.4
 ARG TARGETPLATFORM
 
 # Install minimal dependencies
