@@ -65,5 +65,10 @@ See [changes/v0.1.14.md](changes/v0.1.14.md) for details.
 
 See [changes/v0.1.5.md](changes/v0.1.5.md) for details.
 
+
+## [0.1.16] - 2025-08-28
+
+See [changes/v0.1.16.md](changes/v0.1.16.md) for details.
+
 ## [Unreleased]
 
