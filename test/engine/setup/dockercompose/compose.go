@@ -44,7 +44,7 @@ const (
 	template        = `version: '3.8'
 services:
   loongcollectorC:
-    image: aliyun/loongcollector:0.1.1
+    image: aliyun/loongcollector:0.1.2
     hostname: loongcollector
     privileged: true
     pid: host
