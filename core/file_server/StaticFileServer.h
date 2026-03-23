@@ -73,6 +73,19 @@ public:
         return mInputFileDiscoveryConfigsMap;
     }
 
+    // Same locking contract as FileServer::WithFileDiscoveryConfigs*: hold mUpdateMux while visiting the map.
+    template <typename Func>
+    void WithFileDiscoveryConfigs(Func&& fn) const {
+        std::lock_guard<std::mutex> lock(mUpdateMux);
+        fn(mInputFileDiscoveryConfigsMap);
+    }
+
+    template <typename Func>
+    void WithFileDiscoveryConfigsMutable(Func&& fn) {
+        std::lock_guard<std::mutex> lock(mUpdateMux);
+        fn(mInputFileDiscoveryConfigsMap);
+    }
+
 #ifdef APSARA_UNIT_TEST_MAIN
     void Clear();
 #endif

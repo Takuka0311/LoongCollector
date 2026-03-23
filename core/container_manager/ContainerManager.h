@@ -65,13 +65,6 @@ public:
     void SaveContainerInfo();
     void LoadContainerInfo();
 
-    MatchedContainerInfo CreateMatchedContainerInfo(const std::string& configName,
-                                                    size_t inputIndex,
-                                                    const FileDiscoveryOptions* options,
-                                                    const CollectionPipelineContext* ctx,
-                                                    const std::vector<std::string>& pathExistContainerIDs,
-                                                    const std::vector<std::string>& pathNotExistContainerIDs);
-
     void UpdateMatchedContainerInfoPipeline(CollectionPipelineContext* ctx, size_t inputIndex);
     void RemoveMatchedContainerInfoPipeline();
 
@@ -80,11 +73,6 @@ private:
     void refreshAllContainersSnapshot();
     void incrementallyUpdateContainersSnapshot();
 
-    void applyContainerDiffForOneConfig(const std::string& configName,
-                                        size_t inputIndex,
-                                        FileDiscoveryOptions* options,
-                                        const CollectionPipelineContext* ctx,
-                                        std::shared_ptr<MatchedContainerInfo>& configResult);
     bool checkContainerDiffForOneConfig(const std::string& configName,
                                         size_t inputIndex,
                                         FileDiscoveryOptions* options,
@@ -101,23 +89,38 @@ private:
                                  const std::unordered_map<std::string, std::shared_ptr<RawContainerInfo>>& matchList,
                                  const ContainerFilters& filters,
                                  bool isStdio,
+                                 bool refrashAllContainers,
                                  ContainerDiff& diff);
 
-    std::map<std::pair<std::string, size_t>, FileDiscoveryConfig> getAllFileDiscoveryConfigs();
     void loadContainerInfoFromDetailFormat(const Json::Value& root, const std::string& configPath);
     void loadContainerInfoFromContainersFormat(const Json::Value& root, const std::string& configPath);
 
     void sendMatchedContainerInfo(std::vector<std::shared_ptr<MatchedContainerInfo>> configResults);
     void sendAllMatchedContainerInfo();
 
-    // Helper method for joining container IDs
-    std::string joinContainerIDs(const std::vector<std::string>& containerIDs);
+    static std::string joinContainerIDs(const std::vector<std::string>& containerIDs);
+
+    static MatchedContainerInfo createMatchedContainerInfo(const std::string& configName,
+                                                           size_t inputIndex,
+                                                           const FileDiscoveryOptions* options,
+                                                           const CollectionPipelineContext* ctx,
+                                                           const std::vector<std::string>& pathExistContainerIDs,
+                                                           const std::vector<std::string>& pathNotExistContainerIDs);
+
+    static void appendMatchedContainerInfoForConfig(const std::string& configName,
+                                                    size_t inputIndex,
+                                                    FileDiscoveryOptions* options,
+                                                    const CollectionPipelineContext* ctx,
+                                                    std::vector<std::shared_ptr<MatchedContainerInfo>>& configResults);
+
+    static void applyContainerDiffToOptions(FileDiscoveryOptions* options,
+                                            const CollectionPipelineContext* ctx,
+                                            const std::shared_ptr<ContainerDiff>& diff);
 
     std::unordered_map<std::string, std::shared_ptr<RawContainerInfo>> mContainerMap;
     std::map<std::pair<std::string, size_t>, std::shared_ptr<ContainerDiff>> mConfigContainerDiffMap;
     std::map<std::pair<std::string, size_t>, std::shared_ptr<MatchedContainerInfo>> mConfigContainerResultMap;
     mutable ReadWriteLock mContainerMapRWLock;
-    mutable ReadWriteLock mFileDiscoveryConfigsRWLock;
     std::vector<std::string> mStoppedContainerIDs;
     std::mutex mStoppedContainerIDsMutex;
 

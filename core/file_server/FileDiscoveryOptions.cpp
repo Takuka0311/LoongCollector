@@ -913,4 +913,11 @@ bool FileDiscoveryOptions::DeleteRawContainerInfo(const std::string& containerID
     }
     return false;
 }
+
+void FileDiscoveryOptions::ClearContainerInfo() {
+    if (mContainerInfos) {
+        mContainerInfos->clear();
+    }
+}
+
 } // namespace logtail
