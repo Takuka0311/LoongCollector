@@ -60,6 +60,7 @@ services:
       - 18689:18689
     environment:
       - LOGTAIL_FORCE_COLLECT_SELF_TELEMETRY=true
+      - LOGTAIL_LOG_LEVEL=debug
       - LOGTAIL_DEBUG_FLAG=true
       - LOGTAIL_AUTO_PROF=false
       - LOGTAIL_HTTP_LOAD_CONFIG=true

@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "collection_pipeline/CollectionPipelineContext.h"
+#include "common/Lock.h"
 #include "file_server/FileDiscoveryOptions.h"
 #include "file_server/FileTagOptions.h"
 #include "file_server/MultilineOptions.h"
@@ -73,16 +74,16 @@ public:
         return mInputFileDiscoveryConfigsMap;
     }
 
-    // Same locking contract as FileServer::WithFileDiscoveryConfigs*: hold mUpdateMux while visiting the map.
+    // Config maps only (same idea as FileServer::WithFileDiscoveryConfigs*).
     template <typename Func>
     void WithFileDiscoveryConfigs(Func&& fn) const {
-        std::lock_guard<std::mutex> lock(mUpdateMux);
+        ReadLock lock(mConfigReadWriteLock);
         fn(mInputFileDiscoveryConfigsMap);
     }
 
     template <typename Func>
     void WithFileDiscoveryConfigsMutable(Func&& fn) {
-        std::lock_guard<std::mutex> lock(mUpdateMux);
+        WriteLock lock(mConfigReadWriteLock);
         fn(mInputFileDiscoveryConfigsMap);
     }
 
@@ -142,18 +143,21 @@ private:
     time_t mStartTime = 0;
     bool mIsUnusedCheckpointsCleared = false;
 
-    std::multimap<std::string, std::pair<size_t, LogFileReaderPtr>> mPipelineNameReadersMap;
-
-    // accessed by main thread and input runner thread
+    // Runner state: multimap / mAddedInputs / mDeletedInputs.
+    // Lock order when both needed: mUpdateMux first, then mConfigReadWriteLock.
     mutable std::mutex mUpdateMux;
+    std::multimap<std::pair<std::string, size_t>, LogFileReaderPtr> mInputReadersMap;
+    std::multimap<std::pair<std::string, size_t>, const CollectionPipelineContext*> mAddedInputs;
+    std::set<std::pair<std::string, size_t>> mDeletedInputs;
+
+    // Plugin / config registration (same pattern as FileServer::mReadWriteLock).
+    mutable ReadWriteLock mConfigReadWriteLock;
     std::map<std::pair<std::string, size_t>, FileDiscoveryConfig> mInputFileDiscoveryConfigsMap;
     std::map<std::pair<std::string, size_t>, std::unordered_map<std::string, FileCheckpoint::ContainerMeta>>
         mFileContainerMetaMap;
     std::map<std::pair<std::string, size_t>, FileReaderConfig> mInputFileReaderConfigsMap;
     std::map<std::pair<std::string, size_t>, MultilineConfig> mInputMultilineConfigsMap;
     std::map<std::pair<std::string, size_t>, FileTagConfig> mInputFileTagConfigsMap;
-    std::multimap<std::pair<std::string, size_t>, const CollectionPipelineContext*> mAddedInputs;
-    std::set<std::pair<std::string, size_t>> mDeletedInputs;
 
 #ifdef APSARA_UNIT_TEST_MAIN
     friend class StaticFileServerUnittest;

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include "collection_pipeline/CollectionPipeline.h"
 #include "collection_pipeline/CollectionPipelineContext.h"
 #include "collection_pipeline/plugin/PluginRegistry.h"
@@ -26,6 +28,15 @@
 using namespace std;
 
 namespace logtail {
+
+namespace {
+
+size_t CountInputReadersForPipeline(const std::multimap<pair<string, size_t>, LogFileReaderPtr>& m,
+                                    const string& pipelineName) {
+    return count_if(m.begin(), m.end(), [&](const auto& e) { return e.first.first == pipelineName; });
+}
+
+} // namespace
 
 class StaticFileServerUnittest : public testing::Test {
 public:
@@ -79,8 +90,10 @@ void StaticFileServerUnittest::AddInputWithoutStartingThread(
     const FileTagOptions* fileTagOpts,
     unordered_map<string, FileCheckpoint::ContainerMeta>& fileContainerMetas,
     const CollectionPipelineContext* ctx) {
-    lock_guard<mutex> lock(srv->mUpdateMux);
-    auto configInfo = make_pair(configName, idx);
+    // Lock order: mUpdateMux -> mConfigReadWriteLock (StaticFileServer.h); keep one writer section for all maps.
+    lock_guard<mutex> rlk(srv->mUpdateMux);
+    WriteLock clk(srv->mConfigReadWriteLock);
+    const auto configInfo = make_pair(configName, idx);
     srv->mInputFileDiscoveryConfigsMap.try_emplace(configInfo, make_pair(discoveryOpts, ctx));
     srv->mFileContainerMetaMap.try_emplace(configInfo, fileContainerMetas);
     srv->mInputFileReaderConfigsMap.try_emplace(configInfo, make_pair(fileReaderOpts, ctx));
@@ -163,7 +176,7 @@ void StaticFileServerUnittest::TestGetNextAvailableReader() const {
     }
 
     sServer->UpdateInputs();
-    APSARA_TEST_EQUAL(0U, sServer->mPipelineNameReadersMap.size());
+    APSARA_TEST_EQUAL(0U, sServer->mInputReadersMap.size());
     APSARA_TEST_EQUAL(0U, sServer->mDeletedInputs.size());
 
     fs::remove_all("test_logs");
@@ -186,9 +199,9 @@ void StaticFileServerUnittest::TestUpdateInputs() const {
     AddInputWithoutStartingThread(
         sServer, "test_config_2", 1, &emptyDiscoveryOpts, nullptr, nullptr, nullptr, emptyFileContainerMetas, &ctx);
     sServer->UpdateInputs();
-    APSARA_TEST_EQUAL(3U, sServer->mPipelineNameReadersMap.size());
-    APSARA_TEST_EQUAL(2U, sServer->mPipelineNameReadersMap.count("test_config_2"));
-    APSARA_TEST_EQUAL(1U, sServer->mPipelineNameReadersMap.count("test_config_1"));
+    APSARA_TEST_EQUAL(3U, sServer->mInputReadersMap.size());
+    APSARA_TEST_EQUAL(2U, CountInputReadersForPipeline(sServer->mInputReadersMap, "test_config_2"));
+    APSARA_TEST_EQUAL(1U, CountInputReadersForPipeline(sServer->mInputReadersMap, "test_config_1"));
     APSARA_TEST_TRUE(sServer->mAddedInputs.empty());
     APSARA_TEST_TRUE(sServer->HasRegisteredPlugins());
 
@@ -198,9 +211,9 @@ void StaticFileServerUnittest::TestUpdateInputs() const {
     AddInputWithoutStartingThread(
         sServer, "test_config_2", 0, &emptyDiscoveryOpts, nullptr, nullptr, nullptr, emptyFileContainerMetas, &ctx);
     sServer->UpdateInputs();
-    APSARA_TEST_EQUAL(2U, sServer->mPipelineNameReadersMap.size());
-    APSARA_TEST_EQUAL(1U, sServer->mPipelineNameReadersMap.count("test_config_1"));
-    APSARA_TEST_EQUAL(1U, sServer->mPipelineNameReadersMap.count("test_config_2"));
+    APSARA_TEST_EQUAL(2U, sServer->mInputReadersMap.size());
+    APSARA_TEST_EQUAL(1U, CountInputReadersForPipeline(sServer->mInputReadersMap, "test_config_1"));
+    APSARA_TEST_EQUAL(1U, CountInputReadersForPipeline(sServer->mInputReadersMap, "test_config_2"));
     APSARA_TEST_TRUE(sServer->mDeletedInputs.empty());
     APSARA_TEST_TRUE(sServer->mAddedInputs.empty());
     APSARA_TEST_TRUE(sServer->HasRegisteredPlugins());
@@ -209,7 +222,7 @@ void StaticFileServerUnittest::TestUpdateInputs() const {
     sServer->RemoveInput("test_config_1", 0);
     sServer->RemoveInput("test_config_2", 0);
     sServer->UpdateInputs();
-    APSARA_TEST_EQUAL(0U, sServer->mPipelineNameReadersMap.size());
+    APSARA_TEST_EQUAL(0U, sServer->mInputReadersMap.size());
     APSARA_TEST_TRUE(sServer->mDeletedInputs.empty());
     APSARA_TEST_FALSE(sServer->HasRegisteredPlugins());
 }

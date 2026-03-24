@@ -78,7 +78,7 @@ void StaticFileServer::Stop() {
 }
 
 bool StaticFileServer::HasRegisteredPlugins() const {
-    lock_guard<mutex> lock(mUpdateMux);
+    ReadLock lock(mConfigReadWriteLock);
     return !mInputFileReaderConfigsMap.empty();
 }
 
@@ -93,6 +93,7 @@ void StaticFileServer::ClearUnusedCheckpoints() {
 void StaticFileServer::RemoveInput(const string& configName, size_t idx, bool keepingCheckpoint) {
     {
         lock_guard<mutex> lock(mUpdateMux);
+        WriteLock clock(mConfigReadWriteLock);
         std::pair<std::string, size_t> configInfo = make_pair(configName, idx);
         mInputFileDiscoveryConfigsMap.erase(configInfo);
         mFileContainerMetaMap.erase(configInfo);
@@ -128,6 +129,7 @@ void StaticFileServer::AddInput(const string& configName,
 
     {
         lock_guard<mutex> lock(mUpdateMux);
+        WriteLock clock(mConfigReadWriteLock);
         std::pair<std::string, size_t> configInfo = make_pair(configName, idx);
         mInputFileDiscoveryConfigsMap.try_emplace(configInfo, make_pair(fileDiscoveryOpts, ctx));
         mFileContainerMetaMap.try_emplace(configInfo, fileContainerMetas);
@@ -150,10 +152,12 @@ void StaticFileServer::Run() {
 
         auto cur = time(nullptr);
         if (cur - lastContainerCheckTime >= 3) {
-            if (ContainerManager::GetInstance()->CheckStaticFileServerContainerDiffs()) {
-                ContainerManager::GetInstance()->ApplyStaticFileServerContainerDiffs();
+            if (ContainerManager::GetInstance()->IsReady()) {
+                if (ContainerManager::GetInstance()->CheckStaticFileServerContainerDiffs()) {
+                    ContainerManager::GetInstance()->ApplyStaticFileServerContainerDiffs();
+                }
+                ContainerManager::GetInstance()->GetStaticFileServerContainerStoppedEvents();
             }
-            ContainerManager::GetInstance()->GetStaticFileServerContainerStoppedEvents();
             lastContainerCheckTime = cur;
         }
         if (cur - lastDumpCheckpointTime >= INT32_FLAG(input_static_file_checkpoint_dump_interval_sec)) {
@@ -169,20 +173,19 @@ void StaticFileServer::Run() {
 }
 
 void StaticFileServer::ReadFiles() {
-    for (auto& item : mPipelineNameReadersMap) {
+    lock_guard<mutex> lock(mUpdateMux);
+    for (auto& item : mInputReadersMap) {
         {
-            lock_guard<mutex> lock(mUpdateMux);
-            const auto& configName = item.first;
-            auto inputIdx = item.second.first;
-            if (mDeletedInputs.find(make_pair(configName, inputIdx)) != mDeletedInputs.end()) {
+            const auto& configInfo = item.first;
+            if (mDeletedInputs.find(configInfo) != mDeletedInputs.end()) {
                 continue;
             }
 
-            auto& reader = item.second.second;
+            auto& reader = item.second;
             auto cur = chrono::system_clock::now();
             while (chrono::system_clock::now() - cur < chrono::milliseconds(50)) {
                 if (!reader) {
-                    reader = GetNextAvailableReader(configName, inputIdx);
+                    reader = GetNextAvailableReader(configInfo.first, configInfo.second);
                     if (!reader) {
                         break;
                     }
@@ -193,20 +196,24 @@ void StaticFileServer::ReadFiles() {
                     if (reader) {
                         FileFingerprint fingerprint;
                         if (InputStaticFileCheckpointManager::GetInstance()->GetCurrentFileFingerprint(
-                                configName, inputIdx, &fingerprint)
+                                configInfo.first, configInfo.second, &fingerprint)
                             && !fingerprint.mContainerID.empty()) {
                             string currentID;
                             bool currentStopped = false;
-                            if (GetCurrentContainerInfoForPath(
-                                    configName, inputIdx, reader->GetHostLogPath(), &currentID, &currentStopped)) {
+                            if (GetCurrentContainerInfoForPath(configInfo.first,
+                                                               configInfo.second,
+                                                               reader->GetHostLogPath(),
+                                                               &currentID,
+                                                               &currentStopped)) {
                                 if (currentID != fingerprint.mContainerID || currentStopped) {
                                     LOG_INFO(sLogger,
-                                             ("abort reading: container changed or stopped", "")("config", configName)(
-                                                 "input idx", inputIdx)("filepath", reader->GetHostLogPath())(
-                                                 "checkpoint container id", fingerprint.mContainerID)(
+                                             ("abort reading: container changed or stopped",
+                                              "")("config", configInfo.first)("input idx", configInfo.second)(
+                                                 "filepath", reader->GetHostLogPath())("checkpoint container id",
+                                                                                       fingerprint.mContainerID)(
                                                  "current container id", currentID)("current stopped", currentStopped));
                                     InputStaticFileCheckpointManager::GetInstance()->InvalidateCurrentFileCheckpoint(
-                                        configName, inputIdx);
+                                        configInfo.first, configInfo.second);
                                     reader = nullptr;
                                     skip = true;
                                     break;
@@ -222,14 +229,15 @@ void StaticFileServer::ReadFiles() {
                     auto logBuffer = make_unique<LogBuffer>();
                     bool moreData = reader->ReadLog(*logBuffer, nullptr, true);
                     auto group = LogFileReader::GenerateEventGroup(reader, logBuffer.get());
-                    if (!ProcessorRunner::GetInstance()->PushQueue(reader->GetQueueKey(), inputIdx, std::move(group))) {
+                    if (!ProcessorRunner::GetInstance()->PushQueue(
+                            reader->GetQueueKey(), configInfo.second, std::move(group))) {
                         // should not happend, since only one thread is pushing to the queue
                         LOG_ERROR(sLogger,
-                                  ("failed to push to process queue", "discard data")("config", configName)(
-                                      "input idx", inputIdx)("filepath", reader->GetHostLogPath()));
+                                  ("failed to push to process queue", "discard data")("config", configInfo.first)(
+                                      "input idx", configInfo.second)("filepath", reader->GetHostLogPath()));
                     }
                     InputStaticFileCheckpointManager::GetInstance()->UpdateCurrentFileCheckpoint(
-                        configName, inputIdx, reader->GetLastFilePos());
+                        configInfo.first, configInfo.second, reader->GetLastFilePos());
                     if (!moreData) {
                         reader = nullptr;
                         skip = true;
@@ -242,7 +250,7 @@ void StaticFileServer::ReadFiles() {
             }
         }
         {
-            lock_guard<mutex> lock(mThreadRunningMux);
+            lock_guard<mutex> tlock(mThreadRunningMux);
             if (!mIsThreadRunning) {
                 return;
             }
@@ -328,7 +336,7 @@ LogFileReaderPtr StaticFileServer::GetNextAvailableReader(const string& configNa
 void StaticFileServer::UpdateInputs() {
     unique_lock<mutex> lock(mUpdateMux);
     for (const auto& item : mDeletedInputs) {
-        mPipelineNameReadersMap.erase(item.first);
+        mInputReadersMap.erase(item);
     }
     mDeletedInputs.clear();
 
@@ -351,7 +359,7 @@ void StaticFileServer::UpdateInputs() {
 
         // 获取文件列表
         optional<vector<filesystem::path>> files;
-        auto* fileDiscoveryOpts = mInputFileDiscoveryConfigsMap.find(configInfo)->second.first;
+        auto* fileDiscoveryOpts = GetFileDiscoveryConfig(configInfo.first, configInfo.second).first;
         if (fileDiscoveryOpts->IsContainerDiscoveryEnabled()) {
             if (!ContainerManager::GetInstance()->IsReady()) {
                 // 如果容器发现模块未准备好，跳过本次，等待下次重试
@@ -364,17 +372,20 @@ void StaticFileServer::UpdateInputs() {
             }
             ContainerManager::GetInstance()->GetStaticFileServerContainerStoppedEvents();
         }
-        auto fileContainerMetas = mFileContainerMetaMap.find(configInfo)->second;
-        if (!ctx->IsOnetimePipelineRunningBeforeStart()) {
-            files = GetFiles(fileDiscoveryOpts, ctx, fileContainerMetas);
+        {
+            ReadLock clk(mConfigReadWriteLock);
+            auto fileContainerMetas = mFileContainerMetaMap.find(configInfo)->second;
+            if (!ctx->IsOnetimePipelineRunningBeforeStart()) {
+                files = GetFiles(fileDiscoveryOpts, ctx, fileContainerMetas);
+            }
+            InputStaticFileCheckpointManager::GetInstance()->CreateCheckpoint(
+                configInfo.first, configInfo.second, files, startTime, expireTime, fileContainerMetas);
         }
-        InputStaticFileCheckpointManager::GetInstance()->CreateCheckpoint(
-            configInfo.first, configInfo.second, files, startTime, expireTime, fileContainerMetas);
-        mPipelineNameReadersMap.emplace(configInfo.first, make_pair(configInfo.second, LogFileReaderPtr()));
+        mInputReadersMap.emplace(configInfo, LogFileReaderPtr());
         it = mAddedInputs.erase(it);
     }
 
-    SET_GAUGE(mActiveInputsTotalGauge, mPipelineNameReadersMap.size());
+    SET_GAUGE(mActiveInputsTotalGauge, mInputReadersMap.size());
 }
 
 bool StaticFileServer::GetCurrentContainerInfoForPath(
@@ -415,15 +426,18 @@ bool StaticFileServer::GetCurrentContainerInfoForPath(
 }
 
 FileDiscoveryConfig StaticFileServer::GetFileDiscoveryConfig(const std::string& name, size_t idx) const {
-    auto it = mInputFileDiscoveryConfigsMap.find(make_pair(name, idx));
-    if (it == mInputFileDiscoveryConfigsMap.end()) {
-        // should not happen
-        return make_pair(nullptr, nullptr);
-    }
-    return it->second;
+    FileDiscoveryConfig result = make_pair(nullptr, nullptr);
+    WithFileDiscoveryConfigs([&](const auto& discMap) {
+        auto it = discMap.find(make_pair(name, idx));
+        if (it != discMap.end()) {
+            result = it->second;
+        }
+    });
+    return result;
 }
 
 FileReaderConfig StaticFileServer::GetFileReaderConfig(const std::string& name, size_t idx) const {
+    ReadLock lock(mConfigReadWriteLock);
     auto it = mInputFileReaderConfigsMap.find(make_pair(name, idx));
     if (it == mInputFileReaderConfigsMap.end()) {
         // should not happen
@@ -433,6 +447,7 @@ FileReaderConfig StaticFileServer::GetFileReaderConfig(const std::string& name, 
 }
 
 MultilineConfig StaticFileServer::GetMultilineConfig(const std::string& name, size_t idx) const {
+    ReadLock lock(mConfigReadWriteLock);
     auto it = mInputMultilineConfigsMap.find(make_pair(name, idx));
     if (it == mInputMultilineConfigsMap.end()) {
         // should not happen
@@ -442,6 +457,7 @@ MultilineConfig StaticFileServer::GetMultilineConfig(const std::string& name, si
 }
 
 FileTagConfig StaticFileServer::GetFileTagConfig(const std::string& name, size_t idx) const {
+    ReadLock lock(mConfigReadWriteLock);
     auto it = mInputFileTagConfigsMap.find(make_pair(name, idx));
     if (it == mInputFileTagConfigsMap.end()) {
         // should not happen
@@ -668,11 +684,13 @@ bool StaticFileServer::IsValidDir(const filesystem::path& dir) {
 void StaticFileServer::Clear() {
     Stop();
     lock_guard<mutex> lock(mUpdateMux);
+    WriteLock clock(mConfigReadWriteLock);
     mInputFileDiscoveryConfigsMap.clear();
+    mFileContainerMetaMap.clear();
     mInputFileReaderConfigsMap.clear();
     mInputMultilineConfigsMap.clear();
     mInputFileTagConfigsMap.clear();
-    mPipelineNameReadersMap.clear();
+    mInputReadersMap.clear();
     mAddedInputs.clear();
     mDeletedInputs.clear();
 }

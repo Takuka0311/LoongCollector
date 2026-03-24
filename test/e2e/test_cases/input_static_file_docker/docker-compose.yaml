@@ -16,9 +16,8 @@ version: '3.8'
 
 services:
   container:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: bash:latest
+    command: ["sleep", "infinity"]
     hostname: container
     volumes:
       - .:/root/test/
