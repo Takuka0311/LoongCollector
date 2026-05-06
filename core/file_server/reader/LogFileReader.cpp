@@ -321,9 +321,8 @@ void LogFileReader::SetContainerStopped() {
 bool LogFileReader::ShouldForceReleaseDeletedFileFd() {
     time_t now = time(NULL);
     return INT32_FLAG(force_release_deleted_file_fd_timeout) >= 0
-        && ((IsFileDeleted() && now - GetDeletedTime() >= INT32_FLAG(force_release_deleted_file_fd_timeout))
-            || (IsContainerStopped()
-                && now - GetContainerStoppedTime() >= INT32_FLAG(force_release_deleted_file_fd_timeout)));
+        && (IsContainerStopped()
+            && now - GetContainerStoppedTime() >= INT32_FLAG(force_release_deleted_file_fd_timeout));
 }
 
 void LogFileReader::InitReader(bool tailExisted, FileReadPolicy policy, uint32_t eoConcurrency) {
@@ -1089,16 +1088,8 @@ bool LogFileReader::UpdateFilePtr() {
     // move last update time before check IsValidToPush
     mLastUpdateTime = time(nullptr);
     if (mLogFileOp.IsOpen() == false) {
-        // In several cases we should revert file deletion flag:
-        // 1. File is appended after deletion. This happens when app is still logging, but a user deleted the log file.
-        // 2. File was rename/moved, but is rename/moved back later.
-        // 3. Log rotated. But iLogtail's logic will not remove the reader from readerArray on delete event.
-        //    It will be removed while the new file has modify event. The reader is still the head of readerArray,
-        //    thus it will be open again for reading.
-        // However, if the user explicitly set a delete timeout. We should not revert the flag.
-        if (INT32_FLAG(force_release_deleted_file_fd_timeout) < 0) {
-            SetFileDeleted(false);
-        }
+        // we may have mislabeled the deleted flag and then closed fd. Correct it here.
+        SetFileDeleted(false);
         if (GloablFileDescriptorManager::GetInstance()->GetOpenedFilePtrSize() > INT32_FLAG(max_reader_open_files)) {
             LOG_ERROR(sLogger,
                       ("open file failed, opened fd exceed limit, too many open files",
@@ -1579,6 +1570,7 @@ void LogFileReader::setExactlyOnceCheckpointAfterRead(size_t readSize) {
 void LogFileReader::ReadUTF8(LogBuffer& logBuffer, int64_t end, bool& moreData, bool tryRollback, bool isStaticFile) {
     char* stringBuffer = nullptr;
     size_t nbytes = 0;
+    bool logTooLongSplitFlag = false;
 
     logBuffer.readOffset = mLastFilePos;
     if (!mLogFileOp.IsOpen()) {
@@ -1656,6 +1648,15 @@ void LogFileReader::ReadUTF8(LogBuffer& logBuffer, int64_t end, bool& moreData, 
             mCache.clear();
         } else {
             moreData = (nbytes == BUFFER_SIZE);
+            if (mMultilineConfig.first->mMode == MultilineOptions::Mode::WHOLE_FILE) {
+                if (!moreData && allowRollback) {
+                    mCache.assign(stringBuffer, stringBufferLen);
+                    return;
+                }
+                if (moreData) {
+                    logTooLongSplitFlag = true;
+                }
+            }
             auto alignedBytes = nbytes;
             if (allowRollback) {
                 alignedBytes = AlignLastCharacter(stringBuffer, nbytes);
@@ -1672,16 +1673,7 @@ void LogFileReader::ReadUTF8(LogBuffer& logBuffer, int64_t end, bool& moreData, 
                         int32_t rollbackLineFeedCount = 0;
                         nbytes = RemoveLastIncompleteLog(stringBuffer, nbytes, rollbackLineFeedCount, false);
                     }
-                    LOG_WARNING(sLogger,
-                                ("Log is too long and forced to be split at offset: ",
-                                 mLastFilePos + nbytes)("file: ", mHostLogPath)("inode: ", mDevInode.inode)(
-                                    "first 1024B log: ", logBuffer.rawBuffer.substr(0, 1024)));
-                    std::ostringstream oss;
-                    oss << "Log is too long and forced to be split at offset: " << ToString(mLastFilePos + nbytes)
-                        << " file: " << mHostLogPath << " inode: " << ToString(mDevInode.inode)
-                        << " first 1024B log: " << logBuffer.rawBuffer.substr(0, 1024) << std::endl;
-                    AlarmManager::GetInstance()->SendAlarmWarning(
-                        SPLIT_LOG_FAIL_ALARM, oss.str(), GetRegion(), GetProject(), GetConfigName(), GetLogstore());
+                    logTooLongSplitFlag = true;
                 } else {
                     // line is not finished yet nor more data, put all data in cache
                     mCache.assign(stringBuffer, stringBufferLen);
@@ -1714,7 +1706,17 @@ void LogFileReader::ReadUTF8(LogBuffer& logBuffer, int64_t end, bool& moreData, 
     logBuffer.readLength = nbytes;
     setExactlyOnceCheckpointAfterRead(nbytes);
     mLastFilePos += nbytes;
-
+    if (logTooLongSplitFlag) {
+        LOG_WARNING(sLogger,
+                    ("Log is too long and forced to be split at offset: ", mLastFilePos)("file: ", mHostLogPath)(
+                        "inode: ", mDevInode.inode)("first 1024B log: ", logBuffer.rawBuffer.substr(0, 1024)));
+        std::ostringstream oss;
+        oss << "Log is too long and forced to be split at offset: " << ToString(mLastFilePos)
+            << " file: " << mHostLogPath << " inode: " << ToString(mDevInode.inode)
+            << " first 1024B log: " << logBuffer.rawBuffer.substr(0, 1024) << std::endl;
+        AlarmManager::GetInstance()->SendAlarmWarning(
+            SPLIT_LOG_FAIL_ALARM, oss.str(), GetRegion(), GetProject(), GetConfigName(), GetLogstore());
+    }
     LOG_DEBUG(sLogger, ("read size", nbytes)("last file pos", mLastFilePos));
 }
 
@@ -1796,6 +1798,15 @@ void LogFileReader::ReadGBK(LogBuffer& logBuffer, int64_t end, bool& moreData, b
             mCache.clear();
         } else {
             moreData = (readCharCount == BUFFER_SIZE);
+            if (mMultilineConfig.first->mMode == MultilineOptions::Mode::WHOLE_FILE) {
+                if (!moreData && allowRollback) {
+                    mCache.assign(gbkBuffer, originReadCount);
+                    return;
+                }
+                if (moreData) {
+                    logTooLongSplitFlag = true;
+                }
+            }
             auto alignedBytes = readCharCount;
             if (allowRollback) {
                 alignedBytes = AlignLastCharacter(gbkBuffer, readCharCount);
@@ -2006,6 +2017,9 @@ LogFileReader::FileCompareResult LogFileReader::CompareToFile(const string& file
 int32_t
 LogFileReader::RemoveLastIncompleteLog(char* buffer, int32_t size, int32_t& rollbackLineFeedCount, bool allowRollback) {
     if (!allowRollback || size == 0) {
+        return size;
+    }
+    if (mMultilineConfig.first->mMode == MultilineOptions::Mode::WHOLE_FILE) {
         return size;
     }
     int32_t endPs = 0; // the position of \n or \0
@@ -2552,7 +2566,7 @@ bool LogFileReader::UpdateContainerInfo() {
         LOG_INFO(sLogger,
                  ("container info of file reader changed", "may be because container restart")(
                      "old container id", mContainerID)("new container id", containerInfo->mRawContainerInfo->mID)(
-                     "container status", containerInfo->mRawContainerInfo->mStopped ? "stopped" : "running"));
+                     "container status", containerInfo->mRawContainerInfo->mStopped.load() ? "stopped" : "running"));
         // if config have wildcard path, use wildcardPaths[0] as base path
         std::string dockerPath;
         size_t realBaseDirSize = 0;
@@ -2575,7 +2589,7 @@ bool LogFileReader::UpdateContainerInfo() {
         }
         SetDockerPath(dockerPath, realBaseDirSize);
         SetContainerID(containerInfo->mRawContainerInfo->mID);
-        mContainerStopped = containerInfo->mRawContainerInfo->mStopped;
+        mContainerStopped = containerInfo->mRawContainerInfo->mStopped.load();
         mContainerMetadatas.clear();
         mContainerExtraTags.clear();
         SetContainerMetadatas(containerInfo->mRawContainerInfo->mMetadatas);
