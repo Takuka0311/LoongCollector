@@ -34,24 +34,35 @@ PACKAGE_DIR=${3:-loongcollector-0.0.1}
 ROOTDIR=$(cd $(dirname "${BASH_SOURCE[0]}") && cd .. && pwd)
 ARCH=$(arch)
 
+# Determine file names based on ENABLE_CORP_FEATURE
+if [ "${ENABLE_CORP_FEATURE:-}" = "ON" ] || [ "${ENABLE_CORP_FEATURE:-}" = "1" ] || [ "${ENABLE_CORP_FEATURE:-}" = "true" ]; then
+  PLUGIN_BASE_SO="libPluginBase.so"
+  PLUGIN_ADAPTER_SO="libPluginAdapter.so"
+  BINARY_NAME="ilogtail"
+else
+  PLUGIN_BASE_SO="libGoPluginBase.so"
+  PLUGIN_ADAPTER_SO="libGoPluginAdapter.so"
+  BINARY_NAME="loongcollector"
+fi
+
 # prepare dist dir
 mkdir -p "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
 cp LICENSE README.md "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
-cp "${ROOTDIR}/${OUT_DIR}/loongcollector" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
-cp "${ROOTDIR}/${OUT_DIR}/libGoPluginAdapter.so" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
-cp "${ROOTDIR}/${OUT_DIR}/libGoPluginBase.so" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
+cp "${ROOTDIR}/${OUT_DIR}/${BINARY_NAME}" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
+cp "${ROOTDIR}/${OUT_DIR}/${PLUGIN_ADAPTER_SO}" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
+cp "${ROOTDIR}/${OUT_DIR}/${PLUGIN_BASE_SO}" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
 cp "${ROOTDIR}/${OUT_DIR}/libeBPFDriver.so" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"
 mkdir -p "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/conf/instance_config/local/"
 mkdir -p "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/conf/continuous_pipeline_config/local/"
 cp "${ROOTDIR}/${OUT_DIR}/conf/instance_config/local/loongcollector_config.json" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/conf/instance_config/local/"
 cp -a "${ROOTDIR}/${OUT_DIR}/conf/continuous_pipeline_config/local" "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/conf/continuous_pipeline_config"
-if file "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/loongcollector" | grep x86-64; then ./scripts/download_ebpflib.sh "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"; fi
+if file "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/${BINARY_NAME}" | grep x86-64; then ./scripts/download_ebpflib.sh "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}"; fi
 
 # Splitting debug info at build time with -gsplit-dwarf does not work with current gcc version
 # Strip binary to reduce size here
-strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/loongcollector"
-strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/libGoPluginAdapter.so"
-strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/libGoPluginBase.so"
+strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/${BINARY_NAME}"
+strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/${PLUGIN_ADAPTER_SO}"
+strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/${PLUGIN_BASE_SO}"
 strip "${ROOTDIR}/${DIST_DIR}/${PACKAGE_DIR}/libeBPFDriver.so"
 
 # pack dist dir

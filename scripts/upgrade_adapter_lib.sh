@@ -35,5 +35,9 @@ SOURCEDIR="core/build/plugin"
 [[ $# -eq 2 ]] && SOURCEDIR="$1" || :
 
 if [ $OS_FLAG = 1 ]; then
-  cp ${ROOTDIR}/core/build/go_pipeline/libGoPluginAdapter.so ${ROOTDIR}/pkg/logtail/libGoPluginAdapter.so
+  if [ "${ENABLE_CORP_FEATURE:-}" = "ON" ]; then
+    cp ${ROOTDIR}/core/build/go_pipeline/libPluginAdapter.so ${ROOTDIR}/pkg/logtail/libPluginAdapter.so
+  else
+    cp ${ROOTDIR}/core/build/go_pipeline/libGoPluginAdapter.so ${ROOTDIR}/pkg/logtail/libGoPluginAdapter.so
+  fi
 fi

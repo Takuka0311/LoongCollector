@@ -20,9 +20,21 @@ set -o pipefail
 # initialize variables
 OUT_DIR=${1:-output}
 ROOTDIR=$(cd $(dirname "${BASH_SOURCE[0]}") && cd .. && pwd)
-BIN="${ROOTDIR}/${OUT_DIR}/loongcollector"
-ADAPTER="${ROOTDIR}/${OUT_DIR}/libGoPluginAdapter.so"
-PLUGIN="${ROOTDIR}/${OUT_DIR}/libGoPluginBase.so"
+
+# Determine file names based on ENABLE_CORP_FEATURE
+if [ "${ENABLE_CORP_FEATURE:-}" = "ON" ] || [ "${ENABLE_CORP_FEATURE:-}" = "1" ] || [ "${ENABLE_CORP_FEATURE:-}" = "true" ]; then
+  PLUGIN_BASE_SO="libPluginBase.so"
+  PLUGIN_ADAPTER_SO="libPluginAdapter.so"
+  BINARY_NAME="ilogtail"
+else
+  PLUGIN_BASE_SO="libGoPluginBase.so"
+  PLUGIN_ADAPTER_SO="libGoPluginAdapter.so"
+  BINARY_NAME="loongcollector"
+fi
+
+BIN="${ROOTDIR}/${OUT_DIR}/${BINARY_NAME}"
+ADAPTER="${ROOTDIR}/${OUT_DIR}/${PLUGIN_ADAPTER_SO}"
+PLUGIN="${ROOTDIR}/${OUT_DIR}/${PLUGIN_BASE_SO}"
 EBPF_DRIVER="${ROOTDIR}/${OUT_DIR}/libeBPFDriver.so"
 
 # check if the symbols in loongcollector are compatible with GLIBC_2.5
