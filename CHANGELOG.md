@@ -45,5 +45,10 @@ See [changes/v3.3.5.md](changes/v3.3.5.md) for details.
 
 See [changes/v3.3.5.md](changes/v3.3.5.md) for details.
 
+
+## [3.3.5] - 2026-05-28
+
+See [changes/v3.3.5.md](changes/v3.3.5.md) for details.
+
 ## [Unreleased]
 
